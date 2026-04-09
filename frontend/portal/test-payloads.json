@@ -1,0 +1,47 @@
+{
+  "jobs": {
+    "create": {
+      "title": "Senior Frontend Engineer",
+      "department": "Engineering",
+      "location": "Remote",
+      "type": "Full-time",
+      "description": "We are looking for a React expert to join our Coastal Seven team...",
+      "skills": ["React", "TypeScript", "Tailwind CSS", "Node.js"],
+      "visibility": "Public",
+      "status": "Active"
+    },
+    "update": {
+      "title": "Lead Frontend Engineer",
+      "status": "Closed"
+    }
+  },
+  "applications": {
+    "submit": {
+      "jobId": "job_123",
+      "candidateName": "Elena Soros",
+      "email": "elena.s@example.com",
+      "phone": "+1 (555) 012-3456",
+      "resumeUrl": "https://storage.example.com/resumes/elena_cv.pdf",
+      "coverLetter": "I am excited to apply for the Senior UX Designer role..."
+    },
+    "updateStatus": {
+      "status": "Shortlisted",
+      "aiScore": 94,
+      "notes": "Excellent portfolio and technical background."
+    }
+  },
+  "bulkUpload": {
+    "files": [
+      {
+        "name": "resume_john_doe.pdf",
+        "size": "1.2 MB",
+        "type": "application/pdf"
+      },
+      {
+        "name": "jane_smith_cv.pdf",
+        "size": "850 KB",
+        "type": "application/pdf"
+      }
+    ]
+  }
+}

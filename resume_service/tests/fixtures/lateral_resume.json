@@ -1,0 +1,27 @@
+{
+  "candidate_type": "lateral",
+  "resume_id": "res_lateral_001",
+  "lines": [
+    "Priya Nair",
+    "Bengaluru, Karnataka",
+    "+91 99887 66554 | priya.nair@sample.com | https://www.linkedin.com/in/priyanair | https://github.com/priyanair",
+    "Professional Summary",
+    "Backend engineer with 4.2 years of experience building hiring platforms and recruiter workflows.",
+    "Technical Skills",
+    "Java, Spring Boot, REST APIs, SQL, PostgreSQL, AWS, Docker, Kubernetes, Git",
+    "Professional Experience",
+    "Senior Software Engineer | Horizon Stack | Jun 2023 - Present | Bengaluru",
+    "Built recruiter APIs, Spring Boot services, and PostgreSQL-backed workflows.",
+    "Software Engineer | BlueOrbit Systems | Jul 2021 - May 2023 | Pune",
+    "Delivered Java microservices and AWS integrations.",
+    "Education",
+    "B.E in Information Science | PES University | 2020 | CGPA 8.1",
+    "Current CTC: 16 LPA",
+    "Expected CTC: 22 LPA",
+    "Notice Period: 30 Days",
+    "Work Authorization: India",
+    "Preferred Location: Bengaluru, Hyderabad",
+    "PAN: ABCDE1234F",
+    "Aadhaar: 1234 5678 9012"
+  ]
+}

@@ -1,0 +1,11 @@
+id,name,email,phone,role,match,status,date,avatarSeed
+1,Elena Soros,elena.s@example.com,+1 (555) 012-3456,Senior UX Designer,94,Shortlisted,2026-04-07,elena-soros
+2,Marcus Johnson,marcus.j@example.com,+1 (555) 012-7890,Senior UX Designer,78,Shortlisted,2026-04-06,marcus-johnson
+3,Sarah Chen,s.chen@corp.com,+1 (555) 012-9988,Product Manager,42,Rejected,2026-04-05,sarah-chen
+4,Aarav Sharma,aarav.sharma@email.com,+91 98765 43210,Lead Backend Engineer,88,Shortlisted,2026-04-07,aarav-sharma
+5,Priya Nair,priya.nair@sample.com,+91 99887 66554,Lead Backend Engineer,91,Shortlisted,2026-04-06,priya-nair
+6,Nina Patel,nina.patel@example.com,+1 (555) 017-2144,Data Analyst,81,Pending,2026-04-04,nina-patel
+7,Daniel Brooks,daniel.brooks@example.com,+1 (555) 017-8832,Growth Marketing Lead,67,Shortlisted,2026-04-03,daniel-brooks
+8,Meera Joshi,meera.joshi@example.com,+91 98877 66554,Talent Operations Partner,85,Pending,2026-04-02,meera-joshi
+9,Olivia Reed,olivia.reed@example.com,+1 (555) 018-4421,Product Manager,89,Shortlisted,2026-04-01,olivia-reed
+10,Vikram Rao,vikram.rao@example.com,+91 90000 11223,Data Analyst,76,Shortlisted,2026-03-31,vikram-rao

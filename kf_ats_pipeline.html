@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KF ATS Pipeline</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    padding: 40px 24px 60px;
+    min-height: 100vh;
+  }
+  h1 {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #64748b;
+    margin-bottom: 8px;
+  }
+  h2 {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 800;
+    color: #f1f5f9;
+    margin-bottom: 40px;
+  }
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 760px;
+    margin: 0 auto;
+    gap: 0;
+  }
+
+  /* ── NODES ── */
+  .node {
+    width: 100%;
+    border-radius: 14px;
+    padding: 18px 22px;
+    position: relative;
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .node-inner { display: flex; align-items: flex-start; gap: 16px; }
+  .icon {
+    width: 42px; height: 42px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .node-text { flex: 1; }
+  .node-label {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: 1.8px; text-transform: uppercase;
+    color: #64748b; margin-bottom: 3px;
+  }
+  .node-title { font-size: 16px; font-weight: 800; margin-bottom: 5px; }
+  .node-desc { font-size: 12.5px; color: #94a3b8; line-height: 1.6; }
+  .badge {
+    display: inline-block;
+    font-size: 10px; font-weight: 700;
+    padding: 3px 10px; border-radius: 20px;
+    margin-top: 8px; letter-spacing: 0.5px;
+  }
+  .step-badge {
+    position: absolute;
+    top: -11px; left: 18px;
+    background: #0f1117;
+    border: 1px solid #334155;
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    font-size: 11px; font-weight: 800;
+    color: #475569;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  /* colors */
+  .blue   { background: #111827; }
+  .blue .icon   { background: #1d4ed8; }
+  .blue .node-title { color: #93c5fd; }
+  .purple { background: #130f23; }
+  .purple .icon { background: #6d28d9; }
+  .purple .node-title { color: #c4b5fd; }
+  .teal   { background: #091a1a; }
+  .teal .icon   { background: #0f766e; }
+  .teal .node-title { color: #5eead4; }
+  .indigo { background: #0f0f1f; border-color: rgba(99,102,241,0.25) !important; }
+  .indigo .icon { background: #4338ca; }
+  .indigo .node-title { color: #a5b4fc; }
+
+  .badge-auto   { background: #172554; color: #93c5fd; }
+  .badge-async  { background: #1e1040; color: #c4b5fd; }
+  .badge-human  { background: #052e16; color: #86efac; }
+  .badge-log    { background: #1e1b4b; color: #a5b4fc; }
+
+  /* ── CONNECTORS ── */
+  .arrow { display:flex; flex-direction:column; align-items:center; width:100%; }
+  .arrow-line { width:2px; height:32px; background:linear-gradient(to bottom,#1e293b,#334155); }
+  .arrow-tip { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-top:9px solid #334155; }
+
+  /* ── DECISION ── */
+  .decision {
+    width: 200px; height: 60px;
+    background: #1a2236;
+    border: 2px solid #3b82f6;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800;
+    color: #93c5fd;
+    box-shadow: 0 0 28px rgba(59,130,246,0.18);
+    letter-spacing: 0.3px;
+  }
+  .decision.teal-d {
+    border-color: #0f766e;
+    color: #5eead4;
+    box-shadow: 0 0 28px rgba(15,118,110,0.2);
+    background: #091a1a;
+  }
+
+  /* ── BRANCH ── */
+  .branch-wrap {
+    width: 100%;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .branch-col { flex:1; display:flex; flex-direction:column; align-items:center; }
+
+  .split-bar {
+    width: 100%;
+    position: relative;
+    height: 48px;
+    margin: 0;
+  }
+  .split-bar .hline {
+    position: absolute; left: 12%; right: 12%; top: 0;
+    height: 2px;
+  }
+  .split-bar .vline-l {
+    position: absolute; left: 12%; top: 0;
+    width: 2px; height: 100%;
+  }
+  .split-bar .vline-r {
+    position: absolute; right: 12%; top: 0;
+    width: 2px; height: 100%;
+  }
+  .split-bar .label-l {
+    position: absolute; left: 2%; top: 6px;
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: #f87171;
+  }
+  .split-bar .label-r {
+    position: absolute; right: 2%; top: 6px;
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: #4ade80;
+  }
+  .split-bar .tip-l {
+    position: absolute; bottom: 0;
+    left: calc(12% - 6px);
+    width:0; height:0;
+    border-left:7px solid transparent;
+    border-right:7px solid transparent;
+  }
+  .split-bar .tip-r {
+    position: absolute; bottom: 0;
+    right: calc(12% - 6px);
+    width:0; height:0;
+    border-left:7px solid transparent;
+    border-right:7px solid transparent;
+  }
+
+  /* outcome cards */
+  .outcome {
+    width: 92%;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .outcome .o-icon { font-size: 26px; margin-bottom: 6px; }
+  .outcome .o-title { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+  .outcome .o-desc { font-size: 11.5px; color: #94a3b8; line-height: 1.5; }
+  .outcome .o-status {
+    display:inline-block; margin-top:8px;
+    font-size:10px; font-weight:700;
+    padding:2px 10px; border-radius:20px;
+  }
+
+  .reject-card { background:#1a0808; }
+  .reject-card .o-title { color: #f87171; }
+  .reject-card .o-status { background:#3b0f0f; color:#f87171; }
+
+  .pass-card { background:#091508; }
+  .pass-card .o-title { color: #4ade80; }
+  .pass-card .o-status { background:#052e16; color:#4ade80; }
+
+  .mini-v { width:2px; height:18px; margin:0 auto; }
+  .mini-t { width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; margin:0 auto 4px; }
+
+  /* inner sub-split */
+  .sub-split {
+    width: 92%;
+    position: relative;
+    height: 42px;
+  }
+  .sub-split .hline { position:absolute; left:10%; right:10%; top:0; height:2px; }
+  .sub-split .vl { position:absolute; left:10%; top:0; width:2px; height:100%; }
+  .sub-split .vr { position:absolute; right:10%; top:0; width:2px; height:100%; }
+  .sub-split .ll { position:absolute; left:1%; top:5px; font-size:9px; font-weight:800; color:#f87171; letter-spacing:1px; text-transform:uppercase; }
+  .sub-split .lr { position:absolute; right:1%; top:5px; font-size:9px; font-weight:800; color:#4ade80; letter-spacing:1px; text-transform:uppercase; }
+  .sub-split .tl { position:absolute; bottom:0; left:calc(10% - 5px); width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; }
+  .sub-split .tr { position:absolute; bottom:0; right:calc(10% - 5px); width:0; height:0; border-left:6px solid transparent; border-right:6px solid transparent; }
+
+  .final-row { width:92%; display:flex; gap:8px; }
+  .final-card {
+    flex:1; border-radius:10px; padding:12px; text-align:center;
+    border:1px solid rgba(255,255,255,0.05);
+  }
+  .final-card .fi { font-size:20px; margin-bottom:4px; }
+  .final-card .ft { font-size:12px; font-weight:800; margin-bottom:3px; }
+  .final-card .fd { font-size:10.5px; color:#94a3b8; line-height:1.4; }
+</style>
+</head>
+<body>
+
+<h1>Knowledge Factory — Careers Portal</h1>
+<h2>AI-First Application Screening Pipeline</h2>
+
+<div class="pipeline">
+
+  <!-- STAGE 1 -->
+  <div class="node blue">
+    <div class="step-badge">1</div>
+    <div class="node-inner">
+      <div class="icon">📋</div>
+      <div class="node-text">
+        <div class="node-label">Trigger</div>
+        <div class="node-title">Candidate Clicks Apply</div>
+        <div class="node-desc">Resume uploaded (PDF/DOC) · Basic info submitted · Application record created in DB</div>
+        <span class="badge badge-auto">status: applied</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- STAGE 2 -->
+  <div class="node purple">
+    <div class="step-badge">2</div>
+    <div class="node-inner">
+      <div class="icon">🧠</div>
+      <div class="node-text">
+        <div class="node-label">Async AI Job</div>
+        <div class="node-title">Resume Parse + AI Scoring</div>
+        <div class="node-desc">Resume parsed into structured fields (skills, experience, education) · AI scores candidate vs job requirements (0–100%) · Score stored in DB</div>
+        <span class="badge badge-async">async queue — non-blocking</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- DECISION 1 -->
+  <div class="decision">⚖️ &nbsp; Score ≥ Threshold?</div>
+
+  <!-- SPLIT 1 -->
+  <div class="split-bar">
+    <div class="hline" style="background:#334155;"></div>
+    <div class="vline-l" style="background:#ef4444;"></div>
+    <div class="vline-r" style="background:#22c55e;"></div>
+    <div class="label-l">✕ Below</div>
+    <div class="label-r">✓ Pass</div>
+    <div class="tip-l" style="border-top:8px solid #ef4444;"></div>
+    <div class="tip-r" style="border-top:8px solid #22c55e;"></div>
+  </div>
+
+  <!-- BRANCH -->
+  <div class="branch-wrap">
+
+    <!-- LEFT: AUTO REJECT -->
+    <div class="branch-col">
+      <div class="outcome reject-card">
+        <div class="o-icon">✉️</div>
+        <div class="o-title">Auto Rejection Mail</div>
+        <div class="o-desc">Templated rejection sent instantly · No human involved</div>
+        <span class="o-status">status: auto_rejected</span>
+      </div>
+      <div class="mini-v" style="background:#ef4444; margin-top:10px;"></div>
+      <div class="mini-t" style="border-top:6px solid #ef4444;"></div>
+      <div class="outcome reject-card" style="background:#120808;">
+        <div class="o-icon" style="font-size:20px;">🔁</div>
+        <div class="o-title" style="font-size:12px;">Reapply Eligible?</div>
+        <div class="o-desc">Cooling period enforced · Candidate may reapply after upskilling</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: PASS FLOW -->
+    <div class="branch-col">
+
+      <!-- DB + AI CARD -->
+      <div class="outcome pass-card">
+        <div class="o-icon">💾</div>
+        <div class="o-title">Stored in DB + AI Summary Card</div>
+        <div class="o-desc">Profile + resume + AI fit card saved · Fit score, skill match, rationale generated</div>
+        <span class="o-status">status: under_review</span>
+      </div>
+
+      <div class="mini-v" style="background:#22c55e; margin-top:10px;"></div>
+      <div class="mini-t" style="border-top:6px solid #22c55e;"></div>
+
+      <!-- STAGE 3: RECRUITER -->
+      <div class="node teal" style="width:92%; position:relative;">
+        <div class="step-badge">3</div>
+        <div class="node-inner">
+          <div class="icon">👤</div>
+          <div class="node-text">
+            <div class="node-label">Human Review</div>
+            <div class="node-title">Recruiter Dashboard</div>
+            <div class="node-desc">AI card shown: score, skills, fit rationale · Ranked shortlist · Recruiter notified</div>
+            <span class="badge badge-human">human-in-the-loop</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow" style="width:92%;"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+      <!-- DECISION 2 -->
+      <div class="decision teal-d" style="width:92%; font-size:12px;">👤 &nbsp; Recruiter Decision?</div>
+
+      <!-- SUB SPLIT -->
+      <div class="sub-split">
+        <div class="hline" style="background:#334155;"></div>
+        <div class="vl" style="background:#ef4444;"></div>
+        <div class="vr" style="background:#22c55e;"></div>
+        <div class="ll">✕ Reject</div>
+        <div class="lr">✓ Pass</div>
+        <div class="tl" style="border-top:7px solid #ef4444;"></div>
+        <div class="tr" style="border-top:7px solid #22c55e;"></div>
+      </div>
+
+      <!-- FINAL OUTCOMES -->
+      <div class="final-row">
+        <div class="final-card reject-card">
+          <div class="fi">✉️</div>
+          <div class="ft" style="color:#f87171;">Rejection Mail</div>
+          <div class="fd">Personalised rejection sent to candidate</div>
+        </div>
+        <div class="final-card pass-card">
+          <div class="fi">🗓️</div>
+          <div class="ft" style="color:#4ade80;">Interview Invite</div>
+          <div class="fd">Interview mail sent · status: interview_scheduled</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="arrow" style="margin-top:16px;"><div class="arrow-line"></div><div class="arrow-tip"></div></div>
+
+  <!-- STAGE 5: AUDIT -->
+  <div class="node indigo" style="width:100%;">
+    <div class="step-badge">5</div>
+    <div class="node-inner">
+      <div class="icon">📝</div>
+      <div class="node-text">
+        <div class="node-label">Throughout the Entire Pipeline</div>
+        <div class="node-title">Audit Log + Real-Time Status Tracking</div>
+        <div class="node-desc">Every stage transition logged with timestamp + actor · Candidate sees live status on dashboard · GDPR compliant data handling</div>
+        <span class="badge badge-log">audit_logs table</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,100 @@
+{
+  "resume_id": "res_lateral_001",
+  "candidate_type": "lateral",
+  "normalized_resume": {
+    "full_name": "Priya Nair",
+    "emails": [
+      "priya.nair@sample.com"
+    ],
+    "phones": [
+      "+919988766554"
+    ],
+    "current_location": "Bengaluru, Karnataka",
+    "links": [
+      "https://github.com/priyanair",
+      "https://www.linkedin.com/in/priyanair"
+    ],
+    "skills": [
+      "AWS",
+      "Docker",
+      "Git",
+      "Java",
+      "Kubernetes",
+      "PostgreSQL",
+      "REST APIs",
+      "SQL",
+      "Spring Boot"
+    ],
+    "experience_summary": "Backend engineer with 4.2 years of experience building hiring platforms and recruiter workflows.",
+    "employment_history": [
+      {
+        "company": "Horizon Stack",
+        "title": "Senior Software Engineer",
+        "start_date": "Jun 2023",
+        "end_date": "Present",
+        "employment_type": "experience",
+        "location": "Bengaluru",
+        "description": "Built recruiter APIs, Spring Boot services, and PostgreSQL-backed workflows.",
+        "is_current": true
+      },
+      {
+        "company": "BlueOrbit Systems",
+        "title": "Software Engineer",
+        "start_date": "Jul 2021",
+        "end_date": "May 2023",
+        "employment_type": "experience",
+        "location": "Pune",
+        "description": "Delivered Java microservices and AWS integrations.",
+        "is_current": false
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.E",
+        "specialization": null,
+        "institution": "PES University",
+        "completion_year": 2020,
+        "score": "8.1"
+      }
+    ],
+    "current_role": "Senior Software Engineer",
+    "notice_period": "30 Days",
+    "current_ctc": "16 LPA",
+    "expected_ctc": "22 LPA",
+    "preferred_location": "Bengaluru",
+    "work_authorization": "India"
+  },
+  "parser_metadata": {
+    "filename": "r.docx",
+    "file_type": "docx",
+    "content_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "file_size_bytes": 1478,
+    "line_count": 21,
+    "section_order": [
+      "header",
+      "summary",
+      "skills",
+      "experience",
+      "education"
+    ],
+    "detected_columns": 1,
+    "is_scanned": false,
+    "sensitive_findings": [
+      "aadhaar",
+      "pan"
+    ],
+    "extracted_text": "Priya Nair\nBengaluru, Karnataka\n+91 99887 66554 | priya.nair@sample.com | https://www.linkedin.com/in/priyanair | https://github.com/priyanair\nProfessional Summary\nBackend engineer with 4.2 years of experience building hiring platforms and recruiter workflows.\nTechnical Skills\nJava, Spring Boot, REST APIs, SQL, PostgreSQL, AWS, Docker, Kubernetes, Git\nProfessional Experience\nSenior Software Engineer | Horizon Stack | Jun 2023 - Present | Bengaluru\nBuilt recruiter APIs, Spring Boot services, and PostgreSQL-backed workflows.\nSoftware Engineer | BlueOrbit Systems | Jul 2021 - May 2023 | Pune\nDelivered Java microservices and AWS integrations.\nEducation\nB.E in Information Science | PES University | 2020 | CGPA 8.1\nCurrent CTC: 16 LPA\nExpected CTC: 22 LPA\nNotice Period: 30 Days\nWork Authorization: India\nPreferred Location: Bengaluru, Hyderabad\nPAN: ABCDE1234F\nAadhaar: 1234 5678 9012"
+  },
+  "resume_quality": {
+    "score": 100,
+    "breakdown": {
+      "completeness": 40.0,
+      "structure": 25.0,
+      "contactability": 20.0,
+      "signal_quality": 15.0
+    },
+    "recommendation": "STRONG",
+    "summary": "Resume quality 100/100. Strengths: 9 skills extracted, education parsed, contact details complete."
+  },
+  "resume_text": "Priya Nair\nBengaluru, Karnataka\n+91 99887 66554 | priya.nair@sample.com | https://www.linkedin.com/in/priyanair | https://github.com/priyanair\nProfessional Summary\nBackend engineer with 4.2 years of experience building hiring platforms and recruiter workflows.\nTechnical Skills\nJava, Spring Boot, REST APIs, SQL, PostgreSQL, AWS, Docker, Kubernetes, Git\nProfessional Experience\nSenior Software Engineer | Horizon Stack | Jun 2023 - Present | Bengaluru\nBuilt recruiter APIs, Spring Boot services, and PostgreSQL-backed workflows.\nSoftware Engineer | BlueOrbit Systems | Jul 2021 - May 2023 | Pune\nDelivered Java microservices and AWS integrations.\nEducation\nB.E in Information Science | PES University | 2020 | CGPA 8.1\nCurrent CTC: 16 LPA\nExpected CTC: 22 LPA\nNotice Period: 30 Days\nWork Authorization: India\nPreferred Location: Bengaluru, Hyderabad\nPAN: ABCDE1234F\nAadhaar: 1234 5678 9012"
+}

@@ -1,0 +1,86 @@
+{
+  "resume_id": "contract_storage_score_001",
+  "candidate_type": "fresher",
+  "normalized_resume": {
+    "full_name": "Aarav Sharma",
+    "emails": [
+      "aarav.sharma@email.com"
+    ],
+    "phones": [
+      "+919876543210"
+    ],
+    "current_location": "Hyderabad, Telangana",
+    "links": [
+      "https://www.linkedin.com/in/aaravsharma"
+    ],
+    "skills": [
+      "Data Structures",
+      "Docker",
+      "FastAPI",
+      "Git",
+      "Python",
+      "REST APIs",
+      "SQL"
+    ],
+    "experience_summary": "Entry-level Python developer with strong foundations in backend APIs and data structures.",
+    "employment_history": [
+      {
+        "company": "TechNova Labs",
+        "title": "Backend Intern",
+        "start_date": "Jan 2025",
+        "end_date": "Mar 2025",
+        "employment_type": "internship",
+        "location": null,
+        "description": "Built REST APIs in FastAPI and wrote SQL queries for recruiter workflows.",
+        "is_current": false
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.Tech",
+        "specialization": null,
+        "institution": null,
+        "completion_year": 2025,
+        "score": "8.4"
+      }
+    ],
+    "current_role": "Backend Intern",
+    "notice_period": "Immediate",
+    "current_ctc": null,
+    "expected_ctc": null,
+    "preferred_location": "Hyderabad",
+    "work_authorization": null
+  },
+  "parser_metadata": {
+    "filename": "resume.pdf",
+    "file_type": "pdf",
+    "content_type": "application/pdf",
+    "file_size_bytes": 1498,
+    "line_count": 18,
+    "section_order": [
+      "header",
+      "summary",
+      "skills",
+      "education",
+      "internships",
+      "projects",
+      "achievements"
+    ],
+    "detected_columns": 1,
+    "is_scanned": false,
+    "sensitive_findings": [],
+    "extracted_text": "Aarav Sharma\nHyderabad, Telangana\n+91 98765 43210 | aarav.sharma@email.com | www.linkedin.com/in/aaravsharma | github.com/aarav\nCareer Objective\nEntry-level Python developer with strong foundations in backend APIs and data structures.\nTechnical Skills\nPython, FastAPI, SQL, Git, REST APIs, Data Structures, Docker\nEducation\nB.Tech in Computer Science | JNTU Hyderabad | 2025 | CGPA 8.4\nInternships\nBackend Intern | TechNova Labs | Jan 2025 - Mar 2025\nBuilt REST APIs in FastAPI and wrote SQL queries for recruiter workflows.\nProjects\nResume Analyzer | Python, FastAPI, SQL\nAchievements\nFinalist - Smart India Hackathon\nNotice Period: Immediate\nPreferred Location: Hyderabad, Bengaluru"
+  },
+  "resume_quality": {
+    "score": 100,
+    "breakdown": {
+      "completeness": 40.0,
+      "structure": 25.0,
+      "contactability": 20.0,
+      "signal_quality": 15.0
+    },
+    "recommendation": "STRONG",
+    "summary": "Resume quality 100/100. Strengths: 7 skills extracted, education parsed, contact details complete."
+  },
+  "resume_text": "Aarav Sharma\nHyderabad, Telangana\n+91 98765 43210 | aarav.sharma@email.com | www.linkedin.com/in/aaravsharma | github.com/aarav\nCareer Objective\nEntry-level Python developer with strong foundations in backend APIs and data structures.\nTechnical Skills\nPython, FastAPI, SQL, Git, REST APIs, Data Structures, Docker\nEducation\nB.Tech in Computer Science | JNTU Hyderabad | 2025 | CGPA 8.4\nInternships\nBackend Intern | TechNova Labs | Jan 2025 - Mar 2025\nBuilt REST APIs in FastAPI and wrote SQL queries for recruiter workflows.\nProjects\nResume Analyzer | Python, FastAPI, SQL\nAchievements\nFinalist - Smart India Hackathon\nNotice Period: Immediate\nPreferred Location: Hyderabad, Bengaluru"
+}

@@ -1,0 +1,6 @@
+id,name,category,description,duration,eligibility,deadline,status
+prog_001,AI Product Innovation Track,Product,"Work on high-impact AI product projects guided by industry mentors.",12 weeks,"Final-year students, recent graduates, and early-career product builders.",2026-05-15,Open
+prog_002,Advanced Design Systems Cohort,Design,"Build enterprise-grade design systems with hands-on mentorship from senior design engineers.",8 weeks,"Designers with a portfolio and basic Figma proficiency.",2026-06-10,Open
+prog_003,Data Storytelling Lab,Business,"Translate raw data into persuasive business narratives and executive dashboards.",6 weeks,"Candidates with basic Excel or analytics experience.",2026-07-01,Upcoming
+prog_004,Applied AI Engineering Sprint,Engineering,"Ship production-ready AI features with guidance on APIs, evals, and deployment.",10 weeks,"Engineers comfortable with JavaScript or Python fundamentals.",2026-05-30,Open
+prog_005,Founder Readiness Studio,Business,"Build your narrative, pitch, and operating cadence for zero-to-one ventures.",5 weeks,"Aspiring founders, operators, and interdisciplinary builders.",2026-04-28,Closed

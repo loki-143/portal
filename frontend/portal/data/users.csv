@@ -1,0 +1,8 @@
+id,name,email,role,status,initials,color,passwordHash
+1,Julianne Davenport,j.davenport@coastal7.io,admin,Active,JD,bg-primary/10 text-primary,scrypt.t1lZa1Qjp0GcPDPXfH8hNg.LrZp-ZJ_4fDa62YNbDuuSt8bxpEt3ekUpcloprjIOs3AKCYQHZLOozR2B52Fd81MO1lZ-xwKrarkuch1o1T6SQ
+2,Marcus Kinsley,m.kinsley@talentforce.com,recruiter,Active,MK,,
+3,Elena Rodriguez,e.rod@globaltech.net,recruiter,Disabled,ER,,
+4,Sarah Miller,sarah.m@coastalseven.com,recruiter,Active,SM,bg-primary/10 text-primary,
+5,Robert Kincaid,r.kincaid@coastalseven.com,recruiter,Inactive,RK,bg-teal-accent/10 text-teal-accent,
+6,Lokesh,chlokesh365@gmail.com,recruiter,Active,LO,,scrypt.4X1MDwcBVEyhF6mSnLO2SA.Uggk9khTDgct6fhY-NoTWhEHM02Bw3AsUk9bQwiWya08Mz4BaBHKUQPnntKfrVQloF3xounl6EjAVdkePbdoQg
+7,Lokesh,chlokesh365@gmail.com,recruiter,Active,LO,,scrypt.mPVjvCnf2KxVM6euthg7Qg.sNRhnPwPPRomqXqF9Rx-omXJCl54J5AMYOVh2QEu38mxDWOnVD2zIv6RvJBhVlyafa5SbnGWTIBImwHREapBrg

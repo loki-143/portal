@@ -1,0 +1,94 @@
+{
+  "resume_id": "res_123",
+  "candidate_type": "lateral",
+  "normalized_resume": {
+    "full_name": "Bankuru Ganesh",
+    "emails": [
+      "bankuruganesh143@gmail.com"
+    ],
+    "phones": [
+      "+917670871356"
+    ],
+    "current_location": "pedabondapalli, parvathipuram manyam, Andhra Pradesh, 535501",
+    "links": [
+      "https://github.com/ganeshbankuru",
+      "https://www.linkedin.com/in/ganesh-bankuru-0386b1253"
+    ],
+    "skills": [
+      "AWS",
+      "Azure",
+      "CSS",
+      "Docker",
+      "Flask",
+      "Git",
+      "HTML",
+      "Java",
+      "JavaScript",
+      "PostgreSQL",
+      "Python",
+      "SQL"
+    ],
+    "experience_summary": "Motivated Information Technology undergraduate with strong hands-on experience in Python, Java, and IoT-based system development. Actively involved in building real-world projects showcased at national-level platforms such as Smart India Hackathon and Technex, with exposure to embedded systems, AI integration, and basic cloud deployment. Quick learner",
+    "employment_history": [],
+    "education": [
+      {
+        "degree": "B.Tech",
+        "specialization": null,
+        "institution": "Anil Neerukonda Institute of Technology",
+        "completion_year": 2026,
+        "score": null
+      },
+      {
+        "degree": "Intermediate",
+        "specialization": null,
+        "institution": "Sri Viswa Junior College",
+        "completion_year": 2022,
+        "score": null
+      },
+      {
+        "degree": "SSC",
+        "specialization": null,
+        "institution": "Suresh High School (2020)",
+        "completion_year": 2020,
+        "score": null
+      }
+    ],
+    "current_role": "Motivated Information Technology Undergraduate",
+    "notice_period": null,
+    "current_ctc": null,
+    "expected_ctc": null,
+    "preferred_location": null,
+    "work_authorization": null
+  },
+  "parser_metadata": {
+    "filename": "A22126511005_BankuruGanesh.pdf",
+    "file_type": "pdf",
+    "content_type": "application/pdf",
+    "file_size_bytes": 658657,
+    "line_count": 45,
+    "section_order": [
+      "header",
+      "summary",
+      "education",
+      "skills",
+      "projects",
+      "certifications"
+    ],
+    "detected_columns": 1,
+    "is_scanned": false,
+    "sensitive_findings": [],
+    "extracted_text": "Bankuru Ganesh \npedabondapalli, parvathipuram manyam, Andhra Pradesh, 535501 | +91 7670871356 | bankuruganesh143@gmail.com \nhttps://www.linkedin.com/in/ganesh-bankuru-0386b1253 | https://github.com/Ganeshbankuru \nObjective \n \nMotivated Information Technology undergraduate with strong hands-on experience in Python, Java, and IoT-based system \ndevelopment. Actively involved in building real-world projects showcased at national-level platforms such as Smart India \nHackathon and Technex, with exposure to embedded systems, AI integration, and basic cloud deployment. Quick learner \nwith strong problem-solving skills, eager to apply technical knowledge in a practical internship environment and \ncontribute to impactful engineering solutions. \nEducation\n B-tech(IT) - Anil Neerukonda Institute of Technology (2022-2026) \n\uf0b7 CGPA: 9.08/10 \n Intermediate (MPC) - Sri Viswa Junior College (2020-2022) \n\uf0b7 Percentage: 95% \n SSC (Class 10), Suresh High School (2020) \n\uf0b7 Percentage: 100% \nSkills \n \n\u2022 Technical Skills: HTML5, CSS3, SQL, Oracle, Git/GitHub, Tinker cad, java, python, c, Flask, Docker \n\u2022 Soft Skills: Adaptability, Collaboration, Communication,Continuous Learner, Attentive Listener \nProjects \n \nPersonal Assistance (Python Based & API) \n\uf0b7 Developed a Python-based voice assistant to execute system tasks using speech commands. \n\uf0b7 Integrated speech recognition, text-to-speech, and external APIs for intelligent responses. \nSmart Irrigation (SIH) \n\uf0b7 Designed an IoT-based automated irrigation system using soil moisture sensors and NodeMCU in a master\u2013slave \narchitecture. \n\uf0b7 Enabled real-time decision-making to control irrigation timing, reducing water wastage. \nAnysitehub.live Webapp (Flask app, Docker, Azure cloud (VM, Postgres DB), AWS (ECR)) \n\uf0b7 Built and deployed a full-stack Flask web application using Dockerized services on Azure VM with PostgreSQL \nbackend. \n\uf0b7 Implemented container image management via A WS ECR for scalable deployment. \nPredicting Future Market Direction (QVH) \n\uf0b7 Built predictive system using FTSE 100 historical price data combined with sentiment analysis to forecast market \ndirection. \n\uf0b7 Applied data preprocessing and analytical modeling to identify trends influencing index movement. \nSteroSonic (Multifunctional robot) (Technex)  \n\uf0b7 Developed a multifunctional robot using Raspberry Pi 4 and Arduino Uno with vision and obstacle detection. \n\uf0b7 Integrated Pi Camera, ultrasonic sensors, and motor drivers for autonomous movement and sensing.\n\nCertifications \n \n\u2022 Exploring Quantum circuits participation certificate \u2013 Quantum Valley Hackathon (Sept 2025) \n\u2022 Hardware Expo - Technex (March 2025) \n\u2022 IOT & Robotics - Corizo (Oct 2024) \n\u2022 Intermediate Python, HTML/CSS/JavaScript, Coding Foundations \u2013 Sololearn (2023\u20132024) \nLanguages \n \nEnglish , Telugu , Hindi"
+  },
+  "resume_quality": {
+    "score": 98,
+    "breakdown": {
+      "completeness": 40.0,
+      "structure": 25.0,
+      "contactability": 20.0,
+      "signal_quality": 13.0
+    },
+    "recommendation": "STRONG",
+    "summary": "Resume quality 98/100. Strengths: 12 skills extracted, education parsed, contact details complete."
+  },
+  "resume_text": "Bankuru Ganesh \npedabondapalli, parvathipuram manyam, Andhra Pradesh, 535501 | +91 7670871356 | bankuruganesh143@gmail.com \nhttps://www.linkedin.com/in/ganesh-bankuru-0386b1253 | https://github.com/Ganeshbankuru \nObjective \n \nMotivated Information Technology undergraduate with strong hands-on experience in Python, Java, and IoT-based system \ndevelopment. Actively involved in building real-world projects showcased at national-level platforms such as Smart India \nHackathon and Technex, with exposure to embedded systems, AI integration, and basic cloud deployment. Quick learner \nwith strong problem-solving skills, eager to apply technical knowledge in a practical internship environment and \ncontribute to impactful engineering solutions. \nEducation\n B-tech(IT) - Anil Neerukonda Institute of Technology (2022-2026) \n\uf0b7 CGPA: 9.08/10 \n Intermediate (MPC) - Sri Viswa Junior College (2020-2022) \n\uf0b7 Percentage: 95% \n SSC (Class 10), Suresh High School (2020) \n\uf0b7 Percentage: 100% \nSkills \n \n\u2022 Technical Skills: HTML5, CSS3, SQL, Oracle, Git/GitHub, Tinker cad, java, python, c, Flask, Docker \n\u2022 Soft Skills: Adaptability, Collaboration, Communication,Continuous Learner, Attentive Listener \nProjects \n \nPersonal Assistance (Python Based & API) \n\uf0b7 Developed a Python-based voice assistant to execute system tasks using speech commands. \n\uf0b7 Integrated speech recognition, text-to-speech, and external APIs for intelligent responses. \nSmart Irrigation (SIH) \n\uf0b7 Designed an IoT-based automated irrigation system using soil moisture sensors and NodeMCU in a master\u2013slave \narchitecture. \n\uf0b7 Enabled real-time decision-making to control irrigation timing, reducing water wastage. \nAnysitehub.live Webapp (Flask app, Docker, Azure cloud (VM, Postgres DB), AWS (ECR)) \n\uf0b7 Built and deployed a full-stack Flask web application using Dockerized services on Azure VM with PostgreSQL \nbackend. \n\uf0b7 Implemented container image management via A WS ECR for scalable deployment. \nPredicting Future Market Direction (QVH) \n\uf0b7 Built predictive system using FTSE 100 historical price data combined with sentiment analysis to forecast market \ndirection. \n\uf0b7 Applied data preprocessing and analytical modeling to identify trends influencing index movement. \nSteroSonic (Multifunctional robot) (Technex)  \n\uf0b7 Developed a multifunctional robot using Raspberry Pi 4 and Arduino Uno with vision and obstacle detection. \n\uf0b7 Integrated Pi Camera, ultrasonic sensors, and motor drivers for autonomous movement and sensing.\n\nCertifications \n \n\u2022 Exploring Quantum circuits participation certificate \u2013 Quantum Valley Hackathon (Sept 2025) \n\u2022 Hardware Expo - Technex (March 2025) \n\u2022 IOT & Robotics - Corizo (Oct 2024) \n\u2022 Intermediate Python, HTML/CSS/JavaScript, Coding Foundations \u2013 Sololearn (2023\u20132024) \nLanguages \n \nEnglish , Telugu , Hindi"
+}

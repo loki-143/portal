@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "resume-service"
+version = "0.1.0"
+description = "Internal Python microservice for Indian resume parsing and scoring."
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.121.0,<1.0.0",
+  "httpx>=0.28.0,<1.0.0",
+  "pydantic>=2.11.0,<3.0.0",
+  "pypdf>=5.0.0,<6.0.0",
+  "uvicorn>=0.38.0,<1.0.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["resume_service*"]
