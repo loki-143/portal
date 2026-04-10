@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(python *)",
-      "Bash(pip show *)"
+      "Bash(pip show *)",
+      "Bash(mkdir *)",
+      "Bash(npm install *)",
+      "Bash(node *)",
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(timeout *)",
+      "Bash(curl *)",
+      "Bash(taskkill *)",
+      "Bash(rmdir *)"
     ]
   },
   "$version": 3

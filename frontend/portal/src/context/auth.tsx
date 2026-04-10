@@ -1,107 +1,108 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import type { ReactNode } from 'react';
-import type { User } from '../types';
-import { authApi } from '../services/api';
+import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import type { User, AuthResponse } from '../types';
+import { authApi, storeTokens, clearTokens, getAccessToken } from '../services/api';
 
-type AuthContextValue = {
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
-  logout: () => void;
-};
+  error: string | null;
+  login: (email: string, password: string) => Promise<void>;
+  register: (payload: { email: string; password: string; first_name: string; last_name: string; phone?: string; role?: string }) => Promise<void>;
+  logout: () => Promise<void>;
+}
 
-const AuthContext = createContext<AuthContextValue | null>(null);
-
-const TOKEN_STORAGE_KEY = 'portal_token';
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Load user on mount
   useEffect(() => {
-    let cancelled = false;
-
-    async function loadSession() {
-      setIsLoading(true);
-
-      let token: string | null = null;
-      try {
-        token = localStorage.getItem(TOKEN_STORAGE_KEY);
-      } catch {
-        token = null;
-      }
-
+    const loadUser = async () => {
+      const token = getAccessToken();
       if (!token) {
-        if (!cancelled) {
-          setUser(null);
-          setIsLoading(false);
-        }
+        setIsLoading(false);
         return;
       }
 
       try {
-        const response = await authApi.me();
-        if (!cancelled) {
-          setUser(response.user);
-        }
-      } catch {
-        try {
-          localStorage.removeItem(TOKEN_STORAGE_KEY);
-        } catch {
-          // ignore
-        }
-        if (!cancelled) {
-          setUser(null);
-        }
+        const { user: loadedUser } = await authApi.me();
+        setUser(loadedUser);
+      } catch (err) {
+        console.error('Failed to load user:', err);
+        clearTokens();
+        setUser(null);
       } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
+        setIsLoading(false);
       }
-    }
-
-    void loadSession();
-
-    return () => {
-      cancelled = true;
     };
+
+    loadUser();
   }, []);
 
-  async function login(email: string, password: string) {
-    const response = await authApi.login({ email, password });
-
+  const login = useCallback(async (email: string, password: string) => {
+    setError(null);
+    setIsLoading(true);
     try {
-      localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
-    } catch {
-      // ignore
+      const response: AuthResponse = await authApi.login({ email, password });
+      storeTokens(response.access_token, response.refresh_token);
+      setUser(response.user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    setUser(response.user);
-    return response.user;
-  }
-
-  function logout() {
+  const register = useCallback(async (payload: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone?: string;
+    role?: string;
+  }) => {
+    setError(null);
+    setIsLoading(true);
     try {
-      localStorage.removeItem(TOKEN_STORAGE_KEY);
-    } catch {
-      // ignore
+      const response: AuthResponse = await authApi.register(payload);
+      storeTokens(response.access_token, response.refresh_token);
+      setUser(response.user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Registration failed';
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    setUser(null);
-  }
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    } finally {
+      clearTokens();
+      setUser(null);
+    }
+  }, []);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ user, isLoading, login, logout }),
-    [user, isLoading],
+  return (
+    <AuthContext.Provider value={{ user, isLoading, error, login, register, logout }}>
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuth(): AuthContextValue {
-  const value = useContext(AuthContext);
-  if (!value) {
-    throw new Error('useAuth must be used within <AuthProvider>');
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
-  return value;
+  return context;
 }

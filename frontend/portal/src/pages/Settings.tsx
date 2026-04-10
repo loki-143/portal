@@ -18,7 +18,7 @@ export default function Settings() {
   });
 
   useEffect(() => {
-    if (role !== 'admin') {
+    if (role !== 'admin' && role !== 'superadmin') {
       return;
     }
 
@@ -92,10 +92,14 @@ export default function Settings() {
 
       <Card className="space-y-2">
         <p className="label-md text-[10px] text-on-surface-variant/50">Signed In As</p>
-        <p className="text-lg font-bold text-primary">{user?.name ?? 'User'}</p>
+        <p className="text-lg font-bold text-primary">
+          {user?.first_name && user?.last_name 
+            ? `${user.first_name} ${user.last_name}` 
+            : user?.email ?? 'User'}
+        </p>
         <p className="text-sm text-on-surface-variant/70">{user?.email ?? ''}</p>
         <p className="text-sm text-on-surface-variant/70">
-          Role: <span className="font-bold">{role === 'admin' ? 'Admin' : 'Recruiter / HR'}</span>
+          Role: <span className="font-bold">{role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : 'Recruiter / HR'}</span>
         </p>
       </Card>
 
@@ -103,13 +107,13 @@ export default function Settings() {
         <div className="space-y-1">
           <h2 className="text-xl font-bold tracking-tight">Email Automations</h2>
           <p className="text-sm text-on-surface-variant">
-            {role === 'admin'
+            {role === 'admin' || role === 'superadmin'
               ? 'Edit the templates sent when candidate statuses change.'
               : 'Admin-only templates.'}
           </p>
         </div>
 
-        {role !== 'admin' ? (
+        {role !== 'admin' && role !== 'superadmin' ? (
           <Card variant="low" className="text-on-surface-variant">
             Switch to the Admin role to manage automations.
           </Card>

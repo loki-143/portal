@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { useAuth } from '../context/auth';
 
-function homeForRole(role: 'admin' | 'recruiter'): string {
-  return role === 'admin' ? '/users' : '/';
+function homeForRole(role: string): string {
+  return role === 'superadmin' || role === 'admin' ? '/users' : role === 'recruiter' ? '/' : '/dashboard';
 }
 
 export default function Login() {
@@ -31,8 +31,8 @@ export default function Login() {
       setIsSubmitting(true);
       setError(null);
 
-      const nextUser = await login(email.trim(), password);
-      navigate(homeForRole(nextUser.role), { replace: true });
+      await login(email.trim(), password);
+      // Navigation will happen via the useEffect watching user
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -57,7 +57,7 @@ export default function Login() {
       <div className="w-full max-w-md space-y-6">
         <header className="space-y-2 text-center">
           <div className="text-2xl font-black tracking-tighter text-primary">Coastal Seven</div>
-          <p className="text-on-surface-variant font-medium">Sign in to the unified portal.</p>
+          <p className="text-on-surface-variant font-medium">Sign in to the unified hiring platform.</p>
         </header>
 
         {error && (
@@ -71,7 +71,7 @@ export default function Login() {
             <div className="space-y-2">
               <label className="label-md text-[10px] text-on-surface-variant/50">Email Address</label>
               <input
-                className="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
                 placeholder="admin@coastalseven.com"
                 type="email"
                 value={email}
@@ -84,7 +84,7 @@ export default function Login() {
             <div className="space-y-2">
               <label className="label-md text-[10px] text-on-surface-variant/50">Password</label>
               <input
-                className="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
                 placeholder="••••••••"
                 type="password"
                 value={password}
@@ -99,9 +99,14 @@ export default function Login() {
             </Button>
           </form>
 
-          <p className="text-xs text-on-surface-variant/70">
-            Note: If an account has no password set yet, the first successful login will set it.
-          </p>
+          <div className="text-center space-y-2">
+            <p className="text-xs text-on-surface-variant/70">
+              Default: admin@coastalseven.com / admin123
+            </p>
+            <p className="text-xs text-on-surface-variant/70">
+              Don't have an account? <Link to="/register" className="text-primary hover:underline">Register</Link>
+            </p>
+          </div>
         </Card>
       </div>
     </div>

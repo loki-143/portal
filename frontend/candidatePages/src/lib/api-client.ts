@@ -92,6 +92,29 @@ export function clearAuthTokens(): void {
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
+export function getAuthSession(): { access_token: string; user?: any } | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const token = window.localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (!token) {
+    return null;
+  }
+
+  // Try to decode user from token (JWT payload)
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return { access_token: token, user: { email: payload.email || null, id: payload.userId || null } };
+  } catch {
+    return { access_token: token };
+  }
+}
+
+export function clearAuthSession(): void {
+  clearAuthTokens();
+}
+
 async function request<T>(
   path: string,
   options: RequestOptions = {},

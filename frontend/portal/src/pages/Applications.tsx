@@ -1,344 +1,418 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Filter as FilterIcon, Search, TrendingUp, Zap } from 'lucide-react';
-import { Button } from '../components/ui/Button';
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Search, Filter, Mail, Phone, Calendar, ChevronDown, CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import { applicationsApi } from '../services/api';
 import type { Application, ApplicationStatus } from '../types';
-import { cn } from '../lib/utils';
+import { toast } from '../lib/toast';
+import { openResumeViewer } from '../utils/resumeViewer';
 
-function buildAvatarUrl(seed: string): string {
-  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/100/100`;
+// Inlined to avoid Vite HMR re-export cache issues
+function formatApplicationStatus(status: ApplicationStatus): string {
+  const map: Record<string, string> = {
+    "Applied": "Applied",
+    "Under Review": "Under Review",
+    "Shortlisted": "Shortlisted",
+    "Interview Scheduled": "Interview Scheduled",
+    "Interview Completed": "Interview Completed",
+    "Offered": "Offered",
+    "Hired": "Hired",
+    "Rejected": "Rejected",
+    "Withdrawn": "Withdrawn",
+  };
+  return map[status] || status;
 }
 
-function formatDateLabel(value: string): string {
-  if (!value) {
-    return '--';
+function getMatchScoreBg(status: ApplicationStatus): string {
+  switch (status) {
+    case 'Hired': case 'Shortlisted': return 'bg-green-100 text-green-800';
+    case 'Under Review': case 'Interview Scheduled': case 'Interview Completed': return 'bg-yellow-100 text-yellow-800';
+    case 'Rejected': case 'Withdrawn': return 'bg-red-100 text-red-800';
+    default: return 'bg-blue-100 text-blue-800';
   }
-
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: '2-digit',
-    year: 'numeric',
-  });
 }
+
+const STATUS_OPTIONS: ApplicationStatus[] = [
+  'Applied',
+  'Under Review',
+  'Shortlisted',
+  'Interview Scheduled',
+  'Interview Completed',
+  'Offered',
+  'Hired',
+  'Rejected',
+  'Withdrawn',
+];
 
 export default function Applications() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedRole, setSelectedRole] = useState('All');
-  const [sortBy, setSortBy] = useState<'date' | 'status'>('date');
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [mutatingId, setMutatingId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const limit = 20;
 
   useEffect(() => {
-    let cancelled = false;
+    loadApplications();
+  }, [searchQuery, statusFilter, page]);
 
-    async function load() {
+  async function loadApplications() {
+    try {
       setIsLoading(true);
       setError(null);
 
-      try {
-        const applicationsResponse = await applicationsApi.list();
+      const response = await applicationsApi.list({
+        status: statusFilter || undefined,
+        page,
+        limit,
+      });
 
-        if (cancelled) {
-          return;
-        }
-
-        setApplications(applicationsResponse);
-      } catch (err) {
-        if (cancelled) {
-          return;
-        }
-        setError((err as Error).message);
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  async function updateStatus(id: number, status: ApplicationStatus) {
-    try {
-      setMutatingId(id);
-      const updated = await applicationsApi.update(id, { status });
-      setApplications((prev) => prev.map((item) => (item.id === id ? updated : item)));
+      setApplications(response.applications);
+      setTotal(response.total);
     } catch (err) {
       setError((err as Error).message);
     } finally {
-      setMutatingId(null);
+      setIsLoading(false);
     }
   }
 
-  const roles = useMemo(
-    () => Array.from(new Set(applications.map((application) => application.role))).sort(),
-    [applications],
-  );
-  const normalizedSearch = searchTerm.trim().toLowerCase();
+  async function updateStatus(id: string, status: ApplicationStatus) {
+    try {
+      await applicationsApi.update(id, { status });
+      setApplications(apps =>
+        apps.map(a => a.id === id ? { ...a, status } : a)
+      );
+      toast.success('Status updated', `Application moved to ${formatApplicationStatus(status)}.`);
+    } catch (err) {
+      toast.error('Failed to update status', (err as Error).message);
+      setError((err as Error).message);
+    }
+  }
 
-  const filteredApplications = applications
-    .filter((application) => {
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        [application.name, application.email, application.phone].some((value) =>
-          value.toLowerCase().includes(normalizedSearch),
+  async function computeAIScore(app: Application) {
+    const resumeId = (app as any).resume_id;
+    if (!resumeId) {
+      toast.error('No resume', 'This application does not have a resume to score.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1'}/matches/compute`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('portal_token')}`,
+        },
+        body: JSON.stringify({ resume_id: resumeId }),
+      });
+
+      if (!response.ok) throw new Error('Failed to compute score');
+
+      const matches = await response.json();
+      const jobMatch = matches.find((m: any) => m.jobId === app.job_id);
+      
+      if (jobMatch) {
+        const aiScore = jobMatch.jd_match_score;
+        // Update the application with the AI score
+        await applicationsApi.update(app.id, { ai_score: aiScore } as any);
+        setApplications(apps =>
+          apps.map(a => a.id === app.id ? { ...a, ai_score: aiScore } as any : a)
         );
-
-      const matchesRole = selectedRole === 'All' || application.role === selectedRole;
-
-      return matchesSearch && matchesRole;
-    })
-    .sort((left, right) => {
-      if (sortBy === 'status') {
-        return left.status.localeCompare(right.status) || right.match - left.match;
+        toast.success('AI Score computed', `Match score: ${Math.round(aiScore)}%`);
+      } else {
+        toast.error('No match found', 'Could not compute AI score for this job.');
       }
+    } catch (err) {
+      toast.error('Failed to compute AI score', (err as Error).message);
+    }
+  }
 
-      return right.date.localeCompare(left.date);
-    });
+  const totalPages = Math.ceil(total / limit);
 
-  const metrics = useMemo(() => {
-    const shortlisted = applications.filter((application) => application.status === 'Shortlisted');
-    const pending = applications.filter((application) => application.status === 'Pending');
-    const rejected = applications.filter((application) => application.status === 'Rejected');
-
-    const averageMatchScore =
-      applications.length > 0
-        ? Math.round(applications.reduce((total, application) => total + application.match, 0) / applications.length)
-        : 0;
-
-    return {
-      totalApplications: applications.length,
-      shortlistedApplications: shortlisted.length,
-      pendingApplications: pending.length,
-      rejectedApplications: rejected.length,
-      averageMatchScore,
-      shortlistRate:
-        applications.length > 0 ? Math.round((shortlisted.length / applications.length) * 100) : 0,
-    };
-  }, [applications]);
+  const metrics = {
+    total,
+    applied: applications.filter(a => a.status === 'Applied').length,
+    shortlisted: applications.filter(a => a.status === 'Shortlisted').length,
+    interview: applications.filter(a => a.status.includes('Interview')).length,
+    offered: applications.filter(a => a.status === 'Offered').length,
+  };
 
   return (
-    <div className="space-y-12">
-      <header className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-        <div className="space-y-2">
-          <h1 className="display-lg">Applications</h1>
-          <p className="text-lg text-on-surface-variant font-medium">
-            Reviewing CSV-backed applications via the unified API
-          </p>
-        </div>
-        <div className="flex items-center gap-4 text-sm font-black uppercase tracking-[0.2em] text-primary">
-          <div className="h-1 w-8 soul-gradient rounded-full" />
-          Live Feed
-        </div>
+    <div className="max-w-7xl mx-auto space-y-8">
+      <header className="space-y-2">
+        <h1 className="display-md">Applications</h1>
+        <p className="text-on-surface-variant font-medium">Review and manage candidate applications for all positions.</p>
       </header>
 
-      {/* Filters */}
-      <Card variant="low" className="p-6 flex flex-wrap items-center gap-6">
-        <div className="flex-1 min-w-[300px] relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-on-surface-variant/40" />
-          <input
-            type="text"
-            placeholder="Search candidate names..."
-            value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full bg-surface-container-lowest border-none rounded-full py-3 pl-12 pr-6 text-sm focus:ring-2 focus:ring-primary/20"
-          />
-        </div>
-        <div className="flex items-center gap-4 flex-wrap">
-          <select
-            value={selectedRole}
-            onChange={(event) => setSelectedRole(event.target.value)}
-            className="bg-surface-container-lowest border-none rounded-full py-3 px-6 text-sm font-medium text-on-surface-variant/60 focus:ring-2 focus:ring-primary/20 appearance-none min-w-[180px]"
-          >
-            <option value="All">All Job Roles</option>
-            {roles.map((role) => (
-              <option key={role} value={role}>
-                {role}
-              </option>
-            ))}
-          </select>
-          <div className="flex items-center bg-surface-container-lowest rounded-full p-1">
-            <button
-              type="button"
-              onClick={() => setSortBy('date')}
-              className={cn(
-                'px-4 py-2 text-[10px] font-black uppercase tracking-wider',
-                sortBy === 'date'
-                  ? 'text-primary'
-                  : 'text-on-surface-variant/40 hover:text-on-surface-variant/60',
-              )}
-            >
-              By Date
-            </button>
-            <button
-              type="button"
-              onClick={() => setSortBy('status')}
-              className={cn(
-                'px-4 py-2 text-[10px] font-black uppercase tracking-wider',
-                sortBy === 'status'
-                  ? 'text-primary'
-                  : 'text-on-surface-variant/40 hover:text-on-surface-variant/60',
-              )}
-            >
-              By Status
-            </button>
-          </div>
-          <Button variant="ghost" className="bg-surface-container-lowest shadow-sm">
-            <FilterIcon className="w-4 h-4 mr-2" />
-            Advanced Filters
-          </Button>
-        </div>
-      </Card>
-
-      {isLoading && <Card variant="low">Loading applications…</Card>}
       {error && (
         <Card variant="low" className="text-error">
           {error}
         </Card>
       )}
 
-      {/* Table */}
-      <Card variant="lowest" className="p-0 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-surface-container-low/50">
-                <th className="px-8 py-6 label-md text-[10px] text-on-surface-variant/50">Candidate Info</th>
-                <th className="px-8 py-6 label-md text-[10px] text-on-surface-variant/50">Job Role</th>
-                <th className="px-8 py-6 label-md text-[10px] text-on-surface-variant/50 text-center">AI Match</th>
-                <th className="px-8 py-6 label-md text-[10px] text-on-surface-variant/50">Status</th>
-                <th className="px-8 py-6 label-md text-[10px] text-on-surface-variant/50 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-container-low">
-              {filteredApplications.map((c) => (
-                <tr key={c.id} className="group hover:bg-surface-container-low/30 transition-colors duration-300">
-                  <td className="px-8 py-6">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-full overflow-hidden bg-surface-container-high">
-                        <img
-                          src={buildAvatarUrl(c.avatarSeed || c.name.toLowerCase().replace(/\s+/g, '-'))}
-                          alt={c.name}
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-bold text-on-surface text-base">{c.name}</p>
-                        <p className="text-xs text-on-surface-variant/60 font-medium">
-                          {c.email} / {c.phone}
-                        </p>
-                        <p className="text-[10px] text-primary mt-1 font-bold">
-                          {formatDateLabel(c.date)}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className="text-sm font-semibold text-on-surface-variant">{c.role}</span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-32 h-1.5 bg-surface-container-low rounded-full overflow-hidden">
-                        <div 
-                          className={cn(
-                            "h-full transition-all duration-1000",
-                            c.match > 90 ? "bg-green-500" : c.match > 70 ? "bg-yellow-400" : "bg-error"
-                          )} 
-                          style={{ width: `${c.match}%` }} 
-                        />
-                      </div>
-                      <span className={cn(
-                        "text-xs font-black",
-                        c.match > 90 ? "text-green-600" : c.match > 70 ? "text-yellow-600" : "text-error"
-                      )}>{c.match}%</span>
-                    </div>
-                  </td>
-                  <td className="px-8 py-6">
-                    <span className={cn(
-                      "inline-flex items-center px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full",
-                      c.status === 'Shortlisted' ? "bg-green-50 text-green-700" : 
-                      c.status === 'Pending' ? "bg-surface-container-high text-on-surface-variant/60" : 
-                      "bg-error-container/30 text-error"
-                    )}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="px-8 py-6">
-                    <div className="flex items-center justify-end gap-3 opacity-50 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm" className="bg-surface-container-high">View Resume</Button>
-                      <Button
-                        size="sm"
-                        onClick={() => updateStatus(c.id, 'Shortlisted')}
-                        disabled={mutatingId === c.id}
-                      >
-                        Shortlist
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-error hover:bg-error/5"
-                        onClick={() => updateStatus(c.id, 'Rejected')}
-                        disabled={mutatingId === c.id}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="px-8 py-6 flex items-center justify-between bg-surface-container-low/30">
-          <span className="text-xs font-medium text-on-surface-variant/60">
-            Showing {filteredApplications.length} of {applications.length} applications from the CSV-backed API
-          </span>
-          <Button variant="ghost" size="sm" className="bg-surface-container-lowest">
-            CSV Seed Data
-          </Button>
-        </div>
-      </Card>
-
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <Card variant="low" className="bg-gradient-to-br from-white to-surface-container-low border-none">
-          <p className="label-md text-[10px] text-primary mb-2">Total Volume</p>
-          <p className="text-4xl font-black">{metrics.totalApplications}</p>
-          <div className="mt-4 flex items-center gap-2 text-green-600 font-bold text-xs">
-            <TrendingUp className="w-4 h-4" />
-            {metrics.pendingApplications} awaiting review
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <Card variant="highest">
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-primary" />
+            <div>
+              <p className="text-xs text-on-surface-variant/50">Total</p>
+              <p className="text-2xl font-black">{metrics.total}</p>
+            </div>
           </div>
         </Card>
-        <Card variant="low" className="bg-gradient-to-br from-white to-surface-container-low border-none">
-          <p className="label-md text-[10px] text-primary mb-2">Avg. AI Score</p>
-          <p className="text-4xl font-black">{metrics.averageMatchScore}%</p>
-          <div className="mt-4 flex items-center gap-2 text-primary font-bold text-xs">
-            <Zap className="w-4 h-4" />
-            Across current CSV entries
+        <Card variant="low">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-blue-600" />
+            <div>
+              <p className="text-xs text-on-surface-variant/50">Applied</p>
+              <p className="text-2xl font-black">{metrics.applied}</p>
+            </div>
           </div>
         </Card>
-        <Card variant="low" className="bg-gradient-to-br from-white to-surface-container-low border-none">
-          <p className="label-md text-[10px] text-primary mb-2">Shortlist Rate</p>
-          <p className="text-4xl font-black">{metrics.shortlistRate}%</p>
-          <div className="mt-4 flex items-center gap-2 text-on-surface-variant/60 font-bold text-xs">
-            <FilterIcon className="w-4 h-4" />
-            {metrics.shortlistedApplications} shortlisted candidates
+        <Card variant="low">
+          <div className="flex items-center gap-3">
+            <Filter className="w-5 h-5 text-yellow-600" />
+            <div>
+              <p className="text-xs text-on-surface-variant/50">Shortlisted</p>
+              <p className="text-2xl font-black">{metrics.shortlisted}</p>
+            </div>
+          </div>
+        </Card>
+        <Card variant="low">
+          <div className="flex items-center gap-3">
+            <Calendar className="w-5 h-5 text-purple-600" />
+            <div>
+              <p className="text-xs text-on-surface-variant/50">Interview</p>
+              <p className="text-2xl font-black">{metrics.interview}</p>
+            </div>
+          </div>
+        </Card>
+        <Card variant="low">
+          <div className="flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <div>
+              <p className="text-xs text-on-surface-variant/50">Offered</p>
+              <p className="text-2xl font-black">{metrics.offered}</p>
+            </div>
           </div>
         </Card>
       </div>
+
+      {/* Filters */}
+      <Card className="flex flex-col md:flex-row gap-4">
+        <div className="flex-1 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
+          <input
+            type="text"
+            placeholder="Search by candidate name, email, or job title..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setPage(1);
+            }}
+            className="w-full bg-surface-container-low border-none rounded-lg pl-12 pr-4 py-3 focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
+          className="bg-surface-container-low border-none rounded-lg px-4 py-3"
+        >
+          <option value="">All Statuses</option>
+          {STATUS_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </Card>
+
+      {/* Applications List */}
+      {isLoading ? (
+        <Card variant="low" className="text-center py-12">Loading applications...</Card>
+      ) : applications.length === 0 ? (
+        <Card variant="low" className="text-center py-12">
+          <Users className="w-12 h-12 mx-auto mb-4 text-on-surface-variant/30" />
+          <h3 className="text-lg font-bold mb-2">No applications yet</h3>
+          <p className="text-on-surface-variant">
+            Applications will appear here when candidates apply to your jobs.
+          </p>
+        </Card>
+      ) : (
+        <>
+          <div className="space-y-4">
+            {applications.map((app) => {
+              const jobTitle = (app.jobs as any)?.title || 'Unknown Job';
+              const candidate = (app as any).users;
+              const candidateName = candidate ? `${candidate.first_name || ''} ${candidate.last_name || ''}`.trim() : 'Candidate';
+              const candidateEmail = candidate?.email || app.candidate_id;
+              const candidatePhone = candidate?.phone;
+              const aiScore = (app as any).ai_score;
+              
+              return (
+                <Card key={app.id} className="hover:bg-surface-container-low/50 transition-colors">
+                  <div className="flex flex-col md:flex-row justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <h3 className="font-bold text-lg">{candidateName}</h3>
+                          <p className="text-sm text-on-surface-variant/70">Applied for: {jobTitle}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {aiScore != null && (
+                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${
+                              aiScore >= 80 ? 'bg-green-100 text-green-800' :
+                              aiScore >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              AI: {Math.round(aiScore)}%
+                            </span>
+                          )}
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${getMatchScoreBg(app.status)}`}>
+                            {formatApplicationStatus(app.status)}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="mt-3 flex flex-wrap gap-4 text-sm text-on-surface-variant/70">
+                        {app.cover_letter && (
+                          <p className="line-clamp-2">{app.cover_letter.substring(0, 150)}...</p>
+                        )}
+                      </div>
+                      
+                      <div className="mt-3 flex items-center gap-4 text-xs text-on-surface-variant/50">
+                        <div className="flex items-center gap-1">
+                          <Mail className="w-3 h-3" />
+                          {candidateEmail}
+                        </div>
+                        {candidatePhone && (
+                          <div className="flex items-center gap-1">
+                            <Phone className="w-3 h-3" />
+                            {candidatePhone}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          Applied {new Date(app.applied_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <div className="relative">
+                        <select
+                          value={app.status}
+                          onChange={(e) => updateStatus(app.id, e.target.value as ApplicationStatus)}
+                          className="appearance-none bg-surface-container-low border-none rounded-lg pl-4 pr-10 py-2 text-sm font-bold focus:ring-2 focus:ring-primary/20"
+                        >
+                          {STATUS_OPTIONS.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none" />
+                      </div>
+                      
+                      {aiScore == null && (app as any).resume_id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => computeAIScore(app)}
+                        >
+                          Compute AI Score
+                        </Button>
+                      )}
+                      
+                      {(app.resume_url || (app as any).resume_id) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs"
+                          onClick={async () => {
+                            if (app.resume_url) {
+                              window.open(app.resume_url, '_blank');
+                              return;
+                            }
+                            
+                            const resumeId = (app as any).resume_id;
+                            if (!resumeId) return;
+                            
+                            try {
+                              const [resumeResponse, matchResponse] = await Promise.all([
+                                fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1'}/resume/${resumeId}`, {
+                                  headers: { 'Authorization': `Bearer ${localStorage.getItem('portal_token')}` },
+                                }),
+                                fetch(`${import.meta.env.VITE_CANDIDATE_PAGES_URL || 'http://localhost:3002/api/v1'}/matches/compute`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('portal_token')}`,
+                                  },
+                                  body: JSON.stringify({ resume_id: resumeId }),
+                                }).catch(() => null),
+                              ]);
+                              
+                              if (!resumeResponse.ok) {
+                                const error = await resumeResponse.json();
+                                alert(`Unable to load resume: ${error.error?.message || 'Unknown error'}`);
+                                return;
+                              }
+                              
+                              const resumeData = await resumeResponse.json();
+                              let matchData = null;
+                              
+                              if (matchResponse && matchResponse.ok) {
+                                const matches = await matchResponse.json();
+                                matchData = matches.find((m: any) => m.jobId === app.job_id);
+                              }
+                              
+                              openResumeViewer(resumeData, matchData, app);
+                            } catch (err) {
+                              console.error('Resume viewer error:', err);
+                              alert(`Failed to load resume: ${err instanceof Error ? err.message : 'Unknown error'}`);
+                            }
+                          }}
+                        >
+                          View Resume
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-on-surface-variant/50">
+                Showing {(page - 1) * limit + 1} to {Math.min(page * limit, total)} of {total} applications
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={page === 1}
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={page === totalPages}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

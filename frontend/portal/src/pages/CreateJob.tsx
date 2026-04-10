@@ -4,23 +4,32 @@ import { MapPin, Bold, Italic, List, Link2, Lightbulb, ChevronDown, Plus, X } fr
 import { useState } from 'react';
 import { cn } from '../lib/utils';
 import { jobsApi } from '../services/api';
-import type { JobStatus } from '../types';
+import type { JobStatus, CreateJobRequest } from '../types';
 import { useNavigate } from 'react-router-dom';
+import { toast } from '../lib/toast';
 
 export default function CreateJob() {
   const navigate = useNavigate();
-  const [skills, setSkills] = useState(['TypeScript', 'Node.js', 'AWS Cloud', 'Agile Methodology']);
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState('');
   const [title, setTitle] = useState('');
-  const [department, setDepartment] = useState('Engineering');
+  const [companyName, setCompanyName] = useState('');
+  const [department, setDepartment] = useState('');
   const [location, setLocation] = useState('');
-  const [initialStatus, setInitialStatus] = useState<JobStatus>('Active');
+  const [type, setType] = useState('Full-time');
+  const [description, setDescription] = useState('');
+  const [preferredSkills, setPreferredSkills] = useState<string[]>([]);
+  const [experienceMin, setExperienceMin] = useState('');
+  const [experienceMax, setExperienceMax] = useState('');
+  const [salaryMin, setSalaryMin] = useState('');
+  const [salaryMax, setSalaryMax] = useState('');
+  const [initialStatus, setInitialStatus] = useState<JobStatus>('draft');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const addSkill = () => {
-    if (newSkill && !skills.includes(newSkill)) {
-      setSkills([...skills, newSkill]);
+    if (newSkill.trim() && !skills.includes(newSkill.trim())) {
+      setSkills([...skills, newSkill.trim()]);
       setNewSkill('');
     }
   };
@@ -30,26 +39,38 @@ export default function CreateJob() {
   };
 
   async function submit(statusOverride?: JobStatus) {
+    if (!title.trim()) {
+      setError('Job title is required');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setError(null);
 
       const status = statusOverride ?? initialStatus;
-      const postedDate = new Date().toISOString().slice(0, 10);
 
-      await jobsApi.create({
-        title: title.trim() || 'Untitled Role',
-        department,
-        location: location.trim() || 'Remote',
+      const payload: CreateJobRequest = {
+        title: title.trim(),
+        company_name: companyName.trim() || undefined,
+        department: department.trim() || undefined,
+        location: location.trim() || undefined,
+        type: type || undefined,
+        description: description.trim() || undefined,
+        required_skills: skills,
+        preferred_skills: preferredSkills,
+        experience_min_years: experienceMin ? parseInt(experienceMin) : undefined,
+        experience_max_years: experienceMax ? parseInt(experienceMax) : undefined,
+        salary_min: salaryMin ? parseFloat(salaryMin) : undefined,
+        salary_max: salaryMax ? parseFloat(salaryMax) : undefined,
         status,
-        applicants: 0,
-        newToday: 0,
-        postedDate,
-        timeToHireDays: null,
-      });
+      };
 
+      await jobsApi.create(payload);
+      toast.success('Job created successfully', status === 'active' ? 'The job is now active and visible to candidates.' : 'The job has been saved as a draft.');
       navigate('/jobs');
     } catch (err) {
+      toast.error('Failed to create job', (err as Error).message);
       setError((err as Error).message);
     } finally {
       setIsSubmitting(false);
@@ -61,18 +82,18 @@ export default function CreateJob() {
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-2">
           <h1 className="display-md">Create New Job</h1>
-          <p className="text-on-surface-variant font-medium">Design the next opportunity for the Coastal Seven team.</p>
+          <p className="text-on-surface-variant font-medium">Design the next opportunity for our team.</p>
         </div>
         <div className="flex gap-4">
           <Button
             variant="ghost"
             className="bg-surface-container-low"
-            onClick={() => submit('Draft')}
+            onClick={() => submit('draft')}
             disabled={isSubmitting}
           >
             Save Draft
           </Button>
-          <Button onClick={() => submit('Active')} disabled={isSubmitting}>
+          <Button onClick={() => submit('active')} disabled={isSubmitting}>
             Post Job
           </Button>
         </div>
@@ -92,33 +113,46 @@ export default function CreateJob() {
               <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary font-bold">1</div>
               <h2 className="text-xl font-bold tracking-tight">Job Details</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2 space-y-2">
-                <label className="label-md text-[10px] text-on-surface-variant/50">Job Title</label>
-                <input 
-                  type="text" 
-                  placeholder="e.g. Senior Frontend Engineer" 
+                <label className="label-md text-[10px] text-on-surface-variant/50">Job Title *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Senior Frontend Engineer"
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
-                  className="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
+                  className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
+                  required
                 />
               </div>
-              
+
+              <div className="space-y-2">
+                <label className="label-md text-[10px] text-on-surface-variant/50">Company Name</label>
+                <input
+                  type="text"
+                  placeholder="Coastal Seven"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label className="label-md text-[10px] text-on-surface-variant/50">Department</label>
                 <div className="relative">
                   <select
-                    className="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-3 focus:ring-2 focus:ring-primary/20 appearance-none"
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 appearance-none"
                     value={department}
                     onChange={(event) => setDepartment(event.target.value)}
                   >
-                    <option>Engineering</option>
-                    <option>Design</option>
-                    <option>Product</option>
-                    <option>Marketing</option>
-                    <option>Data</option>
-                    <option>People</option>
+                    <option value="">Select Department</option>
+                    <option value="Engineering">Engineering</option>
+                    <option value="Design">Design</option>
+                    <option value="Product">Product</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Data">Data</option>
+                    <option value="Human Resources">Human Resources</option>
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40 pointer-events-none" />
                 </div>
@@ -127,25 +161,80 @@ export default function CreateJob() {
               <div className="space-y-2">
                 <label className="label-md text-[10px] text-on-surface-variant/50">Employment Type</label>
                 <div className="relative">
-                  <select className="w-full bg-surface-container-low border-none rounded-DEFAULT px-4 py-3 focus:ring-2 focus:ring-primary/20 appearance-none">
+                  <select
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20 appearance-none"
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                  >
                     <option>Full-time</option>
                     <option>Contract</option>
                     <option>Part-time</option>
+                    <option>Internship</option>
                   </select>
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40 pointer-events-none" />
                 </div>
               </div>
 
-              <div className="md:col-span-2 space-y-2">
+              <div className="space-y-2">
                 <label className="label-md text-[10px] text-on-surface-variant/50">Location</label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant/40" />
-                  <input 
-                    type="text" 
-                    placeholder="Remote / New York, NY" 
+                  <input
+                    type="text"
+                    placeholder="Remote / Bangalore, India"
                     value={location}
                     onChange={(event) => setLocation(event.target.value)}
-                    className="w-full bg-surface-container-low border-none rounded-DEFAULT pl-12 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
+                    className="w-full bg-surface-container-low border-none rounded-lg pl-12 pr-4 py-3 focus:ring-2 focus:ring-primary/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="label-md text-[10px] text-on-surface-variant/50">Min Experience (years)</label>
+                  <input
+                    type="number"
+                    placeholder="0"
+                    value={experienceMin}
+                    onChange={(e) => setExperienceMin(e.target.value)}
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="label-md text-[10px] text-on-surface-variant/50">Max Experience (years)</label>
+                  <input
+                    type="number"
+                    placeholder="10"
+                    value={experienceMax}
+                    onChange={(e) => setExperienceMax(e.target.value)}
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="label-md text-[10px] text-on-surface-variant/50">Min Salary (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="1000000"
+                    value={salaryMin}
+                    onChange={(e) => setSalaryMin(e.target.value)}
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                    min="0"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="label-md text-[10px] text-on-surface-variant/50">Max Salary (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="2000000"
+                    value={salaryMax}
+                    onChange={(e) => setSalaryMax(e.target.value)}
+                    className="w-full bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                    min="0"
                   />
                 </div>
               </div>
@@ -158,18 +247,20 @@ export default function CreateJob() {
               <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary font-bold">2</div>
               <h2 className="text-xl font-bold tracking-tight">Description & Responsibilities</h2>
             </div>
-            
+
             <div className="space-y-4">
-              <div className="flex gap-2 p-2 bg-surface-container-low rounded-t-DEFAULT">
-                <button className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><Bold className="w-4 h-4" /></button>
-                <button className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><Italic className="w-4 h-4" /></button>
-                <button className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><List className="w-4 h-4" /></button>
-                <button className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><Link2 className="w-4 h-4" /></button>
+              <div className="flex gap-2 p-2 bg-surface-container-low rounded-t-lg">
+                <button type="button" className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><Bold className="w-4 h-4" /></button>
+                <button type="button" className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><Italic className="w-4 h-4" /></button>
+                <button type="button" className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><List className="w-4 h-4" /></button>
+                <button type="button" className="p-2 hover:bg-surface-container-highest rounded text-on-surface-variant/60 transition-colors"><Link2 className="w-4 h-4" /></button>
               </div>
-              <textarea 
-                rows={8} 
-                placeholder="Tell us about the role..." 
-                className="w-full bg-surface-container-low border-none rounded-b-DEFAULT px-6 py-6 focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+              <textarea
+                rows={8}
+                placeholder="Tell us about the role, responsibilities, and what we're looking for..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="w-full bg-surface-container-low border-none rounded-b-lg px-6 py-6 focus:ring-2 focus:ring-primary/20 transition-all resize-none"
               />
             </div>
           </Card>
@@ -178,27 +269,30 @@ export default function CreateJob() {
           <Card className="space-y-8">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary font-bold">3</div>
-              <h2 className="text-xl font-bold tracking-tight">Key Skills & Requirements</h2>
+              <h2 className="text-xl font-bold tracking-tight">Required Skills</h2>
             </div>
-            
+
             <div className="space-y-6">
               <div className="flex gap-3">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addSkill()}
-                  placeholder="Add a skill (e.g. React, Python)" 
-                  className="flex-1 bg-surface-container-low border-none rounded-DEFAULT px-4 py-3 focus:ring-2 focus:ring-primary/20"
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addSkill())}
+                  placeholder="Add a required skill (e.g. React, Python)"
+                  className="flex-1 bg-surface-container-low border-none rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary/20"
                 />
                 <Button variant="secondary" onClick={addSkill}>Add</Button>
               </div>
-              
+
               <div className="flex flex-wrap gap-2">
+                {skills.length === 0 && (
+                  <p className="text-sm text-on-surface-variant/50">No required skills added yet.</p>
+                )}
                 {skills.map(skill => (
                   <div key={skill} className="flex items-center gap-2 bg-primary-container/10 text-primary px-4 py-2 rounded-full font-bold text-sm">
                     {skill}
-                    <button onClick={() => removeSkill(skill)} className="hover:text-error transition-colors">
+                    <button type="button" onClick={() => removeSkill(skill)} className="hover:text-error transition-colors">
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -222,10 +316,10 @@ export default function CreateJob() {
                 <div className="flex gap-2">
                   <button
                     type="button"
-                    onClick={() => setInitialStatus('Active')}
+                    onClick={() => setInitialStatus('active')}
                     className={cn(
                       'flex-1 py-3 rounded-full font-bold text-sm transition-colors',
-                      initialStatus === 'Active'
+                      initialStatus === 'active'
                         ? 'bg-primary text-on-primary'
                         : 'bg-surface-container-low text-on-surface-variant/60 hover:bg-surface-container-high',
                     )}
@@ -234,48 +328,16 @@ export default function CreateJob() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setInitialStatus('Draft')}
+                    onClick={() => setInitialStatus('draft')}
                     className={cn(
                       'flex-1 py-3 rounded-full font-bold text-sm transition-colors',
-                      initialStatus === 'Draft'
+                      initialStatus === 'draft'
                         ? 'bg-primary text-on-primary'
                         : 'bg-surface-container-low text-on-surface-variant/60 hover:bg-surface-container-high',
                     )}
                   >
                     Draft
                   </button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <label className="label-md text-[10px] text-on-surface-variant/50">Visibility</label>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3 p-4 bg-surface-container-low rounded-DEFAULT cursor-pointer hover:bg-primary/5 transition-colors group">
-                    <input type="radio" name="visibility" defaultChecked className="text-primary focus:ring-primary" />
-                    <div>
-                      <p className="font-bold text-sm">Public</p>
-                      <p className="text-[10px] label-md text-on-surface-variant/40">Visible on careers page</p>
-                    </div>
-                  </label>
-                  <label className="flex items-center gap-3 p-4 bg-surface-container-low rounded-DEFAULT cursor-pointer hover:bg-primary/5 transition-colors group">
-                    <input type="radio" name="visibility" className="text-primary focus:ring-primary" />
-                    <div>
-                      <p className="font-bold text-sm">Internal Only</p>
-                      <p className="text-[10px] label-md text-on-surface-variant/40">Only visible to employees</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <label className="label-md text-[10px] text-on-surface-variant/50">Assignee</label>
-                <div className="flex items-center gap-3 bg-surface-container-low p-3 rounded-DEFAULT">
-                  <img src="https://picsum.photos/seed/alex/100/100" alt="Assignee" className="w-8 h-8 rounded-full" referrerPolicy="no-referrer" />
-                  <div className="flex-1">
-                    <p className="font-bold text-sm">Alex Rivera</p>
-                    <p className="text-[10px] label-md text-on-surface-variant/40">Hiring Manager</p>
-                  </div>
-                  <ChevronDown className="w-4 h-4 text-on-surface-variant/40" />
                 </div>
               </div>
             </div>
@@ -285,7 +347,7 @@ export default function CreateJob() {
             <Lightbulb className="w-8 h-8 mb-4 opacity-80" />
             <h3 className="text-xl font-bold mb-2">Pro Tip</h3>
             <p className="text-sm opacity-80 leading-relaxed">
-              Jobs with detailed "Key Skills" receive 40% more qualified applicants. Be specific about your technology stack.
+              Jobs with detailed "Required Skills" receive 40% more qualified applicants. Be specific about your technology stack.
             </p>
           </Card>
         </div>

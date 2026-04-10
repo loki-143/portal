@@ -1,47 +1,90 @@
-export type JobStatus = 'Active' | 'Draft' | 'Closed';
-export type ApplicationStatus = 'Pending' | 'Shortlisted' | 'Rejected';
-export type UserRole = 'admin' | 'recruiter';
-export type UserStatus = 'Active' | 'Disabled' | 'Inactive';
+// ============================================================
+// PORTAL TYPES - Re-exports from unified types
+// All portals share the same type definitions
+// ============================================================
 
-export interface Job {
-  id: number;
-  title: string;
-  department: string;
-  location: string;
-  status: JobStatus;
-  applicants: number;
-  newToday: number;
-  postedDate: string;
-  timeToHireDays: number | null;
-}
+export type {
+  // Enums
+  UserRole,
+  UserStatus,
+  JobStatus,
+  ApplicationStatus,
+  MatchRecommendation,
+  InterviewType,
+  InterviewStatus,
+  ResumeCandidateType,
+  ProgramEnrollmentStatus,
+  ProgramApplicationStatus,
 
-export interface Application {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  match: number;
-  status: ApplicationStatus;
-  date: string;
-  avatarSeed: string;
-}
+  // User & Auth
+  User,
+  AuthTokens,
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
 
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  initials: string;
-  color?: string;
-}
+  // Candidate Profile
+  CandidateProfile,
+  EducationEntry,
+  WorkPreferences,
 
-export type AutomationType = 'Welcome' | 'Rejection' | 'Shortlist';
+  // Jobs
+  Job,
+  CreateJobRequest,
+  UpdateJobRequest,
+  JobListResponse,
 
-export interface Automation {
-  id: number;
-  type: AutomationType;
-  template: string;
-  enabled: boolean;
-}
+  // Applications
+  Application,
+  ScreeningAnswer,
+  TimelineEntry,
+  CreateApplicationRequest,
+  ApplicationListResponse,
+
+  // Matches
+  MatchResult,
+  MatchBreakdown,
+  MatchInsights,
+
+  // Resume
+  ResumeUploadResponse,
+  ParseResult,
+  NormalizedResume,
+  EmploymentRecord,
+  EducationRecord,
+  ProjectRecord,
+  CertificationRecord,
+  ResumeQuality,
+
+  // Bookmarks
+  Bookmark,
+  BookmarkListResponse,
+
+  // Interviews
+  Interview,
+  CreateInterviewRequest,
+  UpdateInterviewRequest,
+
+  // Knowledge Factory
+  Program,
+  ProgramApplication,
+  CreateProgramApplicationRequest,
+
+  // API
+  ApiError,
+  ApiErrorResponse,
+  SuccessResponse,
+  ActivityLog,
+
+  // Helpers
+  formatApplicationStatus,
+  getMatchScoreColor,
+  getMatchScoreBg,
+  formatSalary,
+} from './unified';
+
+// Legacy type aliases for backward compatibility during migration
+export type LegacyJobStatus = 'Active' | 'Draft' | 'Closed';
+export type LegacyApplicationStatus = 'Pending' | 'Shortlisted' | 'Rejected';
+export type LegacyUserRole = 'admin' | 'recruiter';
+export type LegacyUserStatus = 'Active' | 'Disabled' | 'Inactive';

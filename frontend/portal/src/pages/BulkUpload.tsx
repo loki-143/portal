@@ -9,6 +9,7 @@ export default function BulkUpload() {
   const [isDragging, setIsDragging] = useState(false);
   const [files, setFiles] = useState<{ name: string; size: string; status: 'uploading' | 'complete' | 'error' }[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -19,29 +20,78 @@ export default function BulkUpload() {
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
+  const processFiles = async (selectedFiles: File[]) => {
     setError(null);
 
-    // Simulate file upload + send placeholder request to CSV-backed API
-    const newFiles = [
-      { name: 'resume_john_doe.pdf', size: '1.2 MB', status: 'uploading' as const },
-      { name: 'jane_smith_cv.pdf', size: '850 KB', status: 'uploading' as const },
-    ];
+    if (selectedFiles.length === 0) {
+      setError("No files selected");
+      return;
+    }
+
+    // Filter for PDF and DOCX files only
+    const validFiles = selectedFiles.filter(file => {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+      return ext === 'pdf' || ext === 'docx';
+    });
+
+    if (validFiles.length === 0) {
+      setError("Please upload PDF or DOCX files only");
+      return;
+    }
+
+    // Create file entries with uploading status
+    const newFiles = validFiles.map(file => ({
+      name: file.name,
+      size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+      status: 'uploading' as const,
+    }));
 
     setFiles((prev) => [...prev, ...newFiles]);
 
-    void bulkUploadApi
-      .start({ count: newFiles.length })
-      .then(() => {
-        setFiles((prev) => prev.map((file) => (file.status === 'uploading' ? { ...file, status: 'complete' } : file)));
-      })
-      .catch((err: unknown) => {
-        setError((err as Error).message);
-        setFiles((prev) => prev.map((file) => (file.status === 'uploading' ? { ...file, status: 'error' } : file)));
-      });
+    try {
+      // TODO: Implement actual file upload to storage
+      // For now, just send metadata to the API
+      const resumeData = validFiles.map(file => ({
+        filename: file.name,
+        size: file.size,
+        type: file.type,
+      }));
+
+      await bulkUploadApi.start({ resumes: resumeData });
+      
+      setFiles((prev) => 
+        prev.map((file) => 
+          newFiles.some(nf => nf.name === file.name) 
+            ? { ...file, status: 'complete' } 
+            : file
+        )
+      );
+    } catch (err: unknown) {
+      setError((err as Error).message);
+      setFiles((prev) => 
+        prev.map((file) => 
+          newFiles.some(nf => nf.name === file.name) 
+            ? { ...file, status: 'error' } 
+            : file
+        )
+      );
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    await processFiles(droppedFiles);
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files ? Array.from(e.target.files) : [];
+    await processFiles(selectedFiles);
+    // Reset input so same file can be selected again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -75,7 +125,17 @@ export default function BulkUpload() {
           Support for PDF, DOCX, and TXT files. Our AI will automatically parse candidate details and assign match scores.
         </p>
         <div className="flex gap-4">
-          <Button size="lg">Select Files</Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf,.docx"
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <Button size="lg" onClick={() => fileInputRef.current?.click()}>
+            Select Files
+          </Button>
           <Button variant="secondary" size="lg">Import from LinkedIn</Button>
         </div>
       </Card>

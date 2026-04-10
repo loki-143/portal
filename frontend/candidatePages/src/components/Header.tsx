@@ -1,6 +1,36 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { authApi, getAuthSession, clearAuthSession } from "@/lib/api-client";
 
 export default function Header() {
+  const router = useRouter();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const session = getAuthSession();
+    if (session?.user) {
+      setIsLoggedIn(true);
+      setUserEmail(session.user.email);
+    }
+  }, []);
+
+  async function handleLogout() {
+    try {
+      await authApi.logout();
+    } catch {
+      // Ignore errors during logout
+    } finally {
+      clearAuthSession();
+      setIsLoggedIn(false);
+      setUserEmail(null);
+      router.push("/");
+    }
+  }
+
   return (
     <header className="glass-nav sticky top-0 z-50 border-b border-outline-variant/15">
       <nav className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
@@ -37,6 +67,12 @@ export default function Header() {
             Jobs
           </Link>
           <Link
+            href="/bookmarks"
+            className="text-sm font-medium hover:text-primary transition-colors text-on-surface-variant"
+          >
+            Bookmarks
+          </Link>
+          <Link
             href="/dashboard/candidate"
             className="text-sm font-medium hover:text-primary transition-colors text-on-surface-variant"
           >
@@ -52,12 +88,45 @@ export default function Header() {
 
         {/* Actions */}
         <div className="flex items-center gap-4">
-          <button className="text-sm font-bold text-primary hover:text-on-primary-fixed-variant">
-            Login
-          </button>
-          <button className="hero-gradient text-on-primary px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide editorial-shadow hover:opacity-90 transition-all">
-            Apply Now
-          </button>
+          {isLoggedIn ? (
+            <>
+              <div className="hidden sm:flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                  {userEmail?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <span className="text-sm text-on-surface-variant max-w-32 truncate">
+                  {userEmail}
+                </span>
+              </div>
+              <Link
+                href="/dashboard/candidate"
+                className="text-sm font-bold text-primary hover:text-on-primary-fixed-variant"
+              >
+                Dashboard
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="text-sm font-bold text-on-surface-variant hover:text-error transition-colors"
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="text-sm font-bold text-primary hover:text-on-primary-fixed-variant"
+              >
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="hero-gradient text-on-primary px-6 py-2.5 rounded-xl font-bold text-sm tracking-wide editorial-shadow hover:opacity-90 transition-all"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </nav>
     </header>

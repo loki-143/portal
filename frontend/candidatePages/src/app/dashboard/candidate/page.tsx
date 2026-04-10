@@ -21,10 +21,10 @@ import type {
 import Link from "next/link";
 
 const navItems = [
-  { label: "Overview", icon: "dashboard", active: true },
-  { label: "My Applications", icon: "description", active: false },
-  { label: "Profile Settings", icon: "settings", active: false },
-  { label: "AI Insights", icon: "auto_awesome", active: false },
+  { label: "Overview", icon: "dashboard", active: true, href: "/dashboard/candidate" },
+  { label: "My Applications", icon: "description", active: false, href: "/applications" },
+  { label: "Profile Settings", icon: "settings", active: false, href: "/profile" },
+  { label: "AI Insights", icon: "auto_awesome", active: false, href: "/smart-match" },
 ];
 
 const DEFAULT_AVATAR_URL =
@@ -148,9 +148,12 @@ export default function CandidateDashboard() {
     insights?.improvement_tips[0]?.tip ||
     FALLBACK_MATCH_INSIGHTS.improvement_tips[0]?.tip ||
     "Complete your skills assessment to boost your AI match accuracy.";
+  // Get name from profile or auth session
+  const session = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('auth_session') || '{}') : {};
+  const userName = session.user ? `${session.user.first_name || ''} ${session.user.last_name || ''}`.trim() : '';
   const name = [displayProfile.first_name, displayProfile.last_name]
     .filter(Boolean)
-    .join(" ");
+    .join(" ") || userName || "Candidate";
 
   return (
     <>
@@ -188,7 +191,7 @@ export default function CandidateDashboard() {
               {navItems.map((item) => (
                 <Link
                   key={item.label}
-                  href="#"
+                  href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                     item.active
                       ? "bg-primary-container text-on-primary-container"

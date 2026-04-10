@@ -30,7 +30,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
     ...(role === 'recruiter'
       ? [{ name: 'Applications', icon: FileText, path: '/applications' }]
       : []),
-    ...(role === 'admin'
+    ...(role === 'superadmin' || role === 'admin'
       ? [{ name: 'Users Management', icon: Users, path: '/users' }]
       : []),
     { name: 'Settings', icon: Settings, path: '/settings' },
@@ -50,7 +50,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             <span className="text-xl font-black tracking-tighter text-primary">Coastal Seven</span>
           </div>
           <p className="label-md text-on-surface-variant/50 text-[10px]">
-            Unified Portal · {role === 'admin' ? 'Admin' : 'Recruiter / HR'}
+            Unified Portal · {role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : 'Recruiter / HR'}
           </p>
         </div>
 
@@ -173,9 +173,9 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
                 />
               </div>
               <div className="hidden sm:block">
-                <p className="text-sm font-bold">{user?.name ?? 'User'}</p>
+                <p className="text-sm font-bold">{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : 'User'}</p>
                 <p className="text-[10px] label-md text-on-surface-variant/50">
-                  {role === 'admin' ? 'Admin' : 'Recruiter / HR'}
+                  {role === 'superadmin' ? 'Super Admin' : role === 'admin' ? 'Admin' : 'Recruiter / HR'}
                 </p>
               </div>
               <ChevronDown className="w-4 h-4 text-on-surface-variant/40" />
