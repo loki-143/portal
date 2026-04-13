@@ -24,11 +24,17 @@ def parse_resume_document(
     try:
         extraction = extract_resume(file_bytes, filename=filename, content_type=content_type)
     except ExtractionError as exc:
-        if "does not contain extractable text" in str(exc).lower():
-            raise UnsupportedResumeError("Image-based or scanned resumes are not supported in v1.") from exc
+        # With PyMuPDF + PaddleOCR, we can handle image-based PDFs
+        # Only raise if extraction completely failed
         raise
+    
+    # Check if we got any text at all
     if len(extraction.text.strip()) < SETTINGS.minimum_text_characters:
-        raise UnsupportedResumeError("Image-based or scanned resumes are not supported in v1.")
+        raise UnsupportedResumeError(
+            f"Could not extract sufficient text from resume. "
+            f"Extracted {len(extraction.text.strip())} characters, minimum required is {SETTINGS.minimum_text_characters}. "
+            f"The PDF may be corrupted, password-protected, or contain only images without text."
+        )
 
     normalized, warnings, missing_fields, section_order, sensitive_findings = normalize_resume(
         extraction.lines,

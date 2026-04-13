@@ -1,0 +1,7 @@
+# Add your sample PDF resumes here
+
+Recommended test files:
+- simple_text.pdf - Standard text-based resume
+- multi_column.pdf - Resume with multiple columns
+- with_tables.pdf - Resume containing tables
+- image_based.pdf - Scanned/image-based resume

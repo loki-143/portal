@@ -21,8 +21,10 @@ def extract_resume(file_bytes: bytes, filename: str, content_type: str | None = 
     else:
         raise UnsupportedResumeError("Unsupported file type. Only PDF and DOCX are supported.")
 
-    if not result.text.strip():
-        raise ExtractionError("The uploaded resume does not contain extractable text.")
+    # Note: We don't check for empty text here anymore because:
+    # 1. PyMuPDF might return empty text but detect images
+    # 2. PaddleOCR will be tried as fallback in extract_pdf()
+    # 3. The parser.py will check minimum text length after all extraction attempts
 
     return ExtractionResult(
         file_type=result.file_type,

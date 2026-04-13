@@ -1,166 +1,88 @@
 # Quick Start Guide
 
-## Problem: Port Already in Use (EADDRINUSE)
+## 🚀 Get Started in 3 Steps
 
-If you see this error:
-```
-Error: listen EADDRINUSE: address already in use 0.0.0.0:3001
-```
+### Step 1: Install Dependencies (1 minute)
 
-### Solution 1: Use the Kill Ports Script
-```powershell
-.\kill-ports.ps1
+```bash
+pip install -e .
 ```
 
-### Solution 2: Manual Kill
-```powershell
-# Find and kill process on port 3001
-Get-NetTCPConnection -LocalPort 3001 | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force }
-
-# Find and kill process on port 3002
-Get-NetTCPConnection -LocalPort 3002 | Select-Object -ExpandProperty OwningProcess | ForEach-Object { Stop-Process -Id $_ -Force }
+Verify:
+```bash
+python -c "import fitz; from paddleocr import PaddleOCR; print('✅ Ready!')"
 ```
 
----
+### Step 2: Start Resume Service (30 seconds)
 
-## Starting All Servers
-
-### Option 1: Use the Startup Script (Recommended)
-```powershell
-.\start-all.ps1
+```bash
+cd resume_service
+uvicorn main:app --reload --port 8000
 ```
 
-This will:
-1. Kill any existing processes on ports 3001, 3002, 3003
-2. Start Portal Server (port 3001)
-3. Start Candidate Pages Server (port 3002)
+Keep this terminal running.
 
-### Option 2: Manual Start
+### Step 3: Start Benchmark Webapp (30 seconds)
 
-**Terminal 1 - Portal Server:**
-```powershell
-cd frontend/portal
-npm run dev
+Open a new terminal:
+
+```bash
+cd benchmark_webapp
+python server.py
 ```
 
-**Terminal 2 - Candidate Pages Server:**
-```powershell
-cd frontend/candidatePages
-npm run dev
+## 🌐 Open in Browser
+
+```
+http://localhost:3003/index.html
 ```
 
----
+## 📤 Upload & Test
 
-## Accessing the Application
+1. Drag & drop your PDF files
+2. See extraction results instantly
+3. Compare multiple PDFs
 
-- **Portal (Recruiter/Admin):** http://localhost:3001
-- **Candidate Pages:** http://localhost:3002
+## 📊 What You'll See
 
-### Test Accounts
+- **Processing Time** - How fast (0.2-5 seconds)
+- **Extractor Used** - PyMuPDF (fast) or PaddleOCR (OCR)
+- **Full Text** - Complete extracted text
+- **Metadata** - All extraction details
+- **Comparison** - Side-by-side metrics
 
-**Admin:**
-- Email: `admin@coastalseven.com`
-- Password: `admin123`
+## 🎯 Expected Results
 
-**Recruiter:**
-- Email: `recruiter@coastalseven.com`
-- Password: `recruiter123`
+### Text-Based PDF
+- 🟢 PyMuPDF (green badge)
+- ⚡ 0.2-0.5 seconds
+- ✅ Full text extracted
 
-**Candidate:**
-- Email: `candidate@example.com`
-- Password: `candidate123`
+### Scanned PDF
+- 🔵 PaddleOCR (blue badge)
+- ⏱️ 2-5 seconds
+- ✅ OCR text extracted
 
----
+## 📚 Documentation
 
-## Database Setup
+- `PYMUPDF_PADDLEOCR_INTEGRATION.md` - Complete integration guide
+- `BENCHMARK_WEBAPP_GUIDE.md` - Webapp usage guide
+- `COMPLETE_IMPLEMENTATION_SUMMARY.md` - Full overview
 
-### First Time Setup
+## 🆘 Troubleshooting
 
-1. Run the schema in Supabase SQL Editor:
-```sql
--- Run: database/schema.sql
-```
+### "Failed to process" error
+→ Make sure resume service is running on port 8000
 
-2. Run the seed data:
-```sql
--- Run: database/seed.sql
-```
+### Slow processing
+→ Normal for scanned PDFs (2-5 seconds)
+→ Enable GPU for faster OCR (see docs)
 
-### If You Have Duplicate Key Errors
+### No text extracted
+→ Check if PDF is corrupted or password-protected
 
-Run the cleanup script in Supabase SQL Editor:
-```sql
--- Run: database/cleanup_duplicates.sql
-```
+## 🎉 That's It!
 
----
+You're ready to test PyMuPDF + PaddleOCR with your own PDFs!
 
-## Environment Variables
-
-### Portal Server (.env in frontend/portal/)
-```env
-PORT=3001
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-JWT_SECRET=your_strong_secret_here
-NODE_ENV=development
-```
-
-### Candidate Pages (.env.local in frontend/candidatePages/)
-```env
-PORT=3002
-NEXT_PUBLIC_API_URL=http://localhost:3002/api/v1
-PORTAL_API_URL=http://localhost:3001/api/v1
-RESUME_SERVICE_URL=http://localhost:8000/v1
-```
-
----
-
-## Troubleshooting
-
-### Server Not Seeing Live Updates
-
-**Problem:** Changes to server.ts files don't reflect immediately.
-
-**Solution:** 
-1. Stop the server (Ctrl+C)
-2. Run `.\kill-ports.ps1` to ensure clean shutdown
-3. Restart with `npm run dev`
-
-### 500 Internal Server Error
-
-**Check:**
-1. Server console logs for detailed error messages
-2. Supabase connection is working
-3. Database tables exist (run schema.sql)
-4. Environment variables are set correctly
-
-### Jobs/Applications Not Loading
-
-**Check:**
-1. Supabase has data (run seed.sql)
-2. Server is running on correct port
-3. CORS is configured correctly
-4. Browser console for specific error messages
-
----
-
-## Development Tips
-
-1. **Always check server logs** - Error details are logged server-side
-2. **Use the kill-ports script** before starting servers
-3. **Restart servers** after changing server.ts files
-4. **Check Supabase logs** for database-related issues
-5. **Clear browser cache** if seeing stale data
-
----
-
-## Recent Fixes Applied
-
-✅ Fixed broken database joins (applications → candidate_profiles)
-✅ Added missing automations endpoint
-✅ Fixed jobs page undefined error
-✅ Added proper error handling
-✅ Created database cleanup script
-
-See `SECURITY_FIXES_APPLIED.md` for details.
+Upload some resumes and see the magic happen. 🚀

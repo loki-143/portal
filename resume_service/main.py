@@ -5,6 +5,7 @@ import uuid
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 from .extractors import ExtractionError, UnsupportedResumeError
 from .multipart_parser import MultipartError, parse_multipart
@@ -21,6 +22,15 @@ app = FastAPI(
         "Internal deterministic resume parsing and scoring service for Indian resume normalization. "
         "Use `/v1/parse` for multipart file uploads and `/v1/score` for JD scoring."
     ),
+)
+
+# Add CORS middleware for benchmark webapp
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins for testing
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

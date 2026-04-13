@@ -7,12 +7,39 @@ from io import BytesIO
 
 from .base import ExtractionResult
 
+# PyMuPDF (fitz) - Fast and robust PDF parsing
 try:
-    from pypdf import PdfReader
+    import fitz  # PyMuPDF
+    PYMUPDF_AVAILABLE = True
 except Exception:  # pragma: no cover
-    PdfReader = None
+    PYMUPDF_AVAILABLE = False
+
+# RapidOCR - Fast and reliable OCR for image-based PDFs
+try:
+    from rapidocr_onnxruntime import RapidOCR
+    from PIL import Image
+    import numpy as np
+    OCR_AVAILABLE = True
+except Exception:  # pragma: no cover
+    OCR_AVAILABLE = False
+
+# Initialize RapidOCR once (lightweight, fast initialization)
+_rapid_ocr_instance = None
 
 
+def _get_rapid_ocr():
+    """Get or create RapidOCR instance (singleton pattern)."""
+    global _rapid_ocr_instance
+    if _rapid_ocr_instance is None and OCR_AVAILABLE:
+        try:
+            _rapid_ocr_instance = RapidOCR()
+        except Exception as e:
+            print(f"Failed to initialize RapidOCR: {e}")
+            return None
+    return _rapid_ocr_instance
+
+
+# Regex patterns for custom PDF parser (fallback)
 _OBJ_RE = re.compile(rb"(\d+)\s+(\d+)\s+obj\s*(.*?)\s*endobj", re.S)
 _STREAM_RE = re.compile(rb"^(.*?)stream\r?\n(.*?)\r?\nendstream\s*$", re.S)
 _BFCHAR_RE = re.compile(r"beginbfchar\s*(.*?)\s*endbfchar", re.S)
@@ -31,94 +58,263 @@ class _TextChunk:
 
 
 def extract_pdf(file_bytes: bytes) -> ExtractionResult:
-    pypdf_result = _extract_with_pypdf(file_bytes)
-    if pypdf_result is not None:
+    """
+    Extract text from PDF with intelligent fallback.
+    
+    Strategy:
+    1. Try PyMuPDF (fast, robust, handles complex layouts)
+       - Detects if PDF is text-based or image-based
+    2. If image-based, use Tesseract OCR (reliable, stable)
+    3. Fallback to custom parser (last resort)
+    """
+    # Try PyMuPDF first (best for most PDFs)
+    pymupdf_result = _extract_with_pymupdf(file_bytes)
+    if pymupdf_result is not None:
+        # Check if we got meaningful text
+        if pymupdf_result.text.strip():
+            print(f"PyMuPDF extracted {len(pymupdf_result.text)} characters")
+            return pymupdf_result
+        
+        # If no text but PDF has images, try OCR
+        if pymupdf_result.metadata.get('has_images', False):
+            print(f"PDF has images but no text, trying RapidOCR...")
+            ocr_result = _extract_with_rapid_ocr(file_bytes)
+            if ocr_result is not None and ocr_result.text.strip():
+                print(f"RapidOCR extracted {len(ocr_result.text)} characters")
+                return ocr_result
+            # If OCR also failed, return the pymupdf result (empty) to avoid custom parser
+            # The custom parser can't handle image-based PDFs
+            print("OCR extraction failed or returned no text")
+            return pymupdf_result
+    
+    # Only try custom parser if PyMuPDF completely failed (not just empty text)
+    # Don't use custom parser for image-based PDFs
+    if pymupdf_result is None:
+        print("PyMuPDF failed, trying custom parser...")
         layout_result = _extract_with_layout_parser(file_bytes)
-        if layout_result is not None:
-            pypdf_result.detected_columns = layout_result.detected_columns
-            if not pypdf_result.text.strip() and layout_result.text.strip():
-                return layout_result
-        return pypdf_result
-
-    layout_result = _extract_with_layout_parser(file_bytes)
-    if layout_result is not None:
-        return layout_result
+        if layout_result is not None and layout_result.text.strip():
+            return layout_result
+    
+    # Last resort: return empty result
     return ExtractionResult(
         file_type="pdf",
         text="",
         lines=[],
         content_type="application/pdf",
         detected_columns=1,
-        metadata={"page_count": 0, "extractor_name": "custom-pdf"},
+        metadata={"page_count": 0, "extractor_name": "none", "error": "Failed to extract text"},
     )
+
+
+def _extract_with_pymupdf(file_bytes: bytes) -> ExtractionResult | None:
+    """
+    Extract text using PyMuPDF (fitz).
+    
+    PyMuPDF is:
+    - 3-5x faster than pypdf
+    - Better at handling complex layouts
+    - Can detect images in PDF
+    - Production-proven
+    """
+    if not PYMUPDF_AVAILABLE:
+        return None
+    
+    try:
+        # Open PDF from bytes
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        
+        page_texts = []
+        has_images = False
+        total_text_length = 0
+        x_positions = []
+        
+        for page_num in range(len(doc)):
+            page = doc[page_num]
+            
+            # Extract text with layout preservation
+            text = page.get_text("text")
+            
+            if text and text.strip():
+                page_texts.append(text.strip())
+                total_text_length += len(text)
+                
+                # Get text positions for column detection
+                blocks = page.get_text("dict")["blocks"]
+                for block in blocks:
+                    if block.get("type") == 0:  # Text block
+                        x_positions.append(block.get("bbox", [0])[0])
+            
+            # Check for images
+            image_list = page.get_images()
+            if image_list:
+                has_images = True
+        
+        page_count = len(doc)
+        doc.close()
+        
+        # Combine all pages
+        text = "\n\n".join(page_texts).strip()
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        
+        # Detect columns
+        detected_columns = _detect_columns(x_positions)
+        
+        metadata = {
+            "page_count": page_count,
+            "extractor_name": "pymupdf",
+            "has_images": has_images,
+            "text_length": total_text_length,
+        }
+        
+        return ExtractionResult(
+            file_type="pdf",
+            text=text,
+            lines=lines,
+            content_type="application/pdf",
+            detected_columns=detected_columns,
+            metadata=metadata,
+        )
+        
+    except Exception as e:
+        print(f"PyMuPDF extraction failed: {e}")
+        return None
+
+
+def _extract_with_rapid_ocr(file_bytes: bytes) -> ExtractionResult | None:
+    """
+    Extract text from image-based PDF using RapidOCR.
+    
+    RapidOCR is:
+    - Fast and lightweight (ONNX runtime)
+    - No external dependencies (no Tesseract needed)
+    - Good accuracy for English text
+    - Works offline
+    """
+    if not OCR_AVAILABLE or not PYMUPDF_AVAILABLE:
+        return None
+    
+    ocr = _get_rapid_ocr()
+    if ocr is None:
+        return None
+    
+    try:
+        # Open PDF
+        doc = fitz.open(stream=file_bytes, filetype="pdf")
+        
+        all_text = []
+        page_count = len(doc)
+        
+        for page_num in range(page_count):
+            page = doc[page_num]
+            
+            # Convert page to image (high resolution for better OCR)
+            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))  # 2x zoom for quality
+            
+            # Convert to numpy array
+            img = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width, pix.n)
+            
+            # If image has alpha channel, convert to RGB
+            if pix.n == 4:  # RGBA
+                img = img[:, :, :3]  # Drop alpha channel
+            
+            # Run OCR
+            try:
+                ocr_output = ocr(img)
+                # RapidOCR returns (result, elapse) tuple
+                if isinstance(ocr_output, tuple) and len(ocr_output) >= 2:
+                    result, elapse = ocr_output[0], ocr_output[1]
+                else:
+                    result = ocr_output
+                
+                if result:
+                    print(f"RapidOCR page {page_num}: {len(result)} text blocks found")
+                else:
+                    print(f"RapidOCR page {page_num}: no text detected")
+                    result = None
+            except Exception as ocr_error:
+                print(f"RapidOCR failed for page {page_num}: {ocr_error}")
+                result = None
+            
+            if result:
+                # RapidOCR returns: [[bbox, text, confidence], ...]
+                page_text = []
+                for item in result:
+                    if item and len(item) >= 2:
+                        text = item[1]  # text is at index 1
+                        if text and isinstance(text, str) and text.strip():
+                            page_text.append(text.strip())
+                
+                if page_text:
+                    all_text.append("\n".join(page_text))
+                    print(f"Extracted {len(page_text)} lines from page {page_num}")
+        
+        doc.close()
+        
+        # Combine all pages
+        text = "\n\n".join(all_text).strip()
+        lines = [line.strip() for line in text.splitlines() if line.strip()]
+        
+        metadata = {
+            "page_count": page_count,
+            "extractor_name": "rapidocr",
+            "ocr_used": True,
+        }
+        
+        return ExtractionResult(
+            file_type="pdf",
+            text=text,
+            lines=lines,
+            content_type="application/pdf",
+            detected_columns=1,  # OCR doesn't preserve column info easily
+            metadata=metadata,
+        )
+        
+    except Exception as e:
+        print(f"RapidOCR extraction failed: {e}")
+        return None
 
 
 def _extract_with_layout_parser(file_bytes: bytes) -> ExtractionResult | None:
-    objects = _parse_objects(file_bytes)
-    streams: dict[int, bytes] = {}
-    font_maps = _build_font_maps(objects, streams)
-    pages = _find_pages(objects)
-
-    chunks: list[_TextChunk] = []
-    x_positions: list[float] = []
-    for page in pages:
-        for content_id in page["content_ids"]:
-            raw_stream = _get_stream(objects, streams, content_id)
-            if not raw_stream:
-                continue
-            page_chunks = _extract_text_chunks(
-                raw_stream.decode("latin1", "ignore"),
-                page["fonts"],
-                font_maps,
-            )
-            chunks.extend(page_chunks)
-            x_positions.extend(chunk.x for chunk in page_chunks if chunk.text.strip())
-
-    lines = _group_chunks(chunks)
-    text = "\n".join(lines).strip()
-    return ExtractionResult(
-        file_type="pdf",
-        text=text,
-        lines=lines,
-        content_type="application/pdf",
-        detected_columns=_detect_columns(x_positions),
-        metadata={"page_count": len(pages), "extractor_name": "custom-pdf"},
-    )
-
-
-def _extract_with_pypdf(file_bytes: bytes) -> ExtractionResult | None:
-    if PdfReader is None:
-        return None
-
+    """Custom PDF parser as last resort fallback."""
     try:
-        reader = PdfReader(BytesIO(file_bytes))
-    except Exception:
+        objects = _parse_objects(file_bytes)
+        streams: dict[int, bytes] = {}
+        font_maps = _build_font_maps(objects, streams)
+        pages = _find_pages(objects)
+
+        chunks: list[_TextChunk] = []
+        x_positions: list[float] = []
+        for page in pages:
+            for content_id in page["content_ids"]:
+                raw_stream = _get_stream(objects, streams, content_id)
+                if not raw_stream:
+                    continue
+                page_chunks = _extract_text_chunks(
+                    raw_stream.decode("latin1", "ignore"),
+                    page["fonts"],
+                    font_maps,
+                )
+                chunks.extend(page_chunks)
+                x_positions.extend(chunk.x for chunk in page_chunks if chunk.text.strip())
+
+        lines = _group_chunks(chunks)
+        text = "\n".join(lines).strip()
+        return ExtractionResult(
+            file_type="pdf",
+            text=text,
+            lines=lines,
+            content_type="application/pdf",
+            detected_columns=_detect_columns(x_positions),
+            metadata={"page_count": len(pages), "extractor_name": "custom-pdf"},
+        )
+    except Exception as e:
+        print(f"Custom parser failed: {e}")
         return None
 
-    page_texts: list[str] = []
-    for page in reader.pages:
-        try:
-            text = page.extract_text() or ""
-        except Exception:
-            text = ""
-        cleaned = text.replace("\r", "\n").strip()
-        if cleaned:
-            page_texts.append(cleaned)
 
-    if not page_texts:
-        return None
-
-    text = "\n\n".join(page_texts).strip()
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    return ExtractionResult(
-        file_type="pdf",
-        text=text,
-        lines=lines,
-        content_type="application/pdf",
-        detected_columns=1,
-        metadata={"page_count": len(reader.pages), "extractor_name": "pypdf"},
-    )
-
+# ============================================================
+# CUSTOM PARSER HELPER FUNCTIONS (Fallback)
+# ============================================================
 
 def _parse_objects(file_bytes: bytes) -> dict[int, bytes]:
     return {int(match.group(1)): match.group(3) for match in _OBJ_RE.finditer(file_bytes)}
